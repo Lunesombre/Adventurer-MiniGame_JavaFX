@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 public class AdventurerGameApp extends Application {
 
+
   private Stage primaryStage;
   public static final Logger LOG = LoggerFactory.getLogger(AdventurerGameApp.class);
 
@@ -34,7 +35,7 @@ public class AdventurerGameApp extends Application {
   private void showGameMap() {
     try {
       GameMap gameMap = MapGenerator.generateMap(20, 20);
-      GameMapScene gameMapScene = new GameMapScene(gameMap);
+      GameMapScene gameMapScene = GameMapScene.create(gameMap);
       primaryStage.setScene(gameMapScene);
     } catch (NoValidRangeException e) {
       LOG.error(e.getMessage(), e);
