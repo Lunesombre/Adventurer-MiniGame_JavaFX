@@ -1,5 +1,6 @@
 package game.adventurer;
 
+import game.adventurer.exceptions.FontLoadException;
 import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
 import game.adventurer.service.MapGenerator;
@@ -19,10 +20,10 @@ public class AdventurerGameApp extends Application {
   public static final Logger LOG = LoggerFactory.getLogger(AdventurerGameApp.class);
 
   @Override
-  public void start(Stage primaryStage) {
+  public void start(Stage primaryStage) throws FontLoadException {
     this.primaryStage = primaryStage;
 
-    SplashScreen splashScreen = new SplashScreen("Adventurer Game");
+    SplashScreen splashScreen = SplashScreen.create("Adventurer Game");
     primaryStage.setScene(splashScreen);
     primaryStage.show();
 

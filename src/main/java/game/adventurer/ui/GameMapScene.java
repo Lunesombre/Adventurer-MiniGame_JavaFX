@@ -41,6 +41,7 @@ public class GameMapScene extends Scene {
 
     gamePane = new Pane();
     root.getChildren().add(gamePane);
+    root.setStyle("-fx-background-color: #403f3f;");
 
     // Add a listeners for resizing
     widthProperty().addListener((obs, oldVal, newVal) -> updateGameMap());
@@ -93,11 +94,7 @@ public class GameMapScene extends Scene {
     treasure.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
     gamePane.getChildren().add(treasure);
 
-    // TODO : changer taille écran titre aussi
-    // TODO : changer police du titre
-    // TODO : mettre une taille max de la carte, selon résolution écran utilisateur
-    // TODO : new Game screen avec selection Nom aventurier et taille de la map
-    // TODO : ajouter logo jeu à gauche et dans barre des tâches
+
   }
 }
 
