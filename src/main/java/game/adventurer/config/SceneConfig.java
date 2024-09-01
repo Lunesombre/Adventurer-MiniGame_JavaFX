@@ -11,9 +11,12 @@ import org.springframework.stereotype.Component;
 @Component
 public final class SceneConfig {
 
-
   private static SceneConfig instance;
 
+  @Getter
+  @Value("${app.title.font.path}")
+  private String titleFontPath;
+  
   @Getter
   private final int width;
   @Getter
