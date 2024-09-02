@@ -8,6 +8,7 @@ import game.adventurer.ui.GameMapScene;
 import game.adventurer.ui.SplashScreen;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ public class AdventurerGameApp extends Application {
   @Override
   public void start(Stage primaryStage) throws FontLoadException {
     this.primaryStage = primaryStage;
+    primaryStage.getIcons().add(new Image("assets/icons/A.png"));
 
     SplashScreen splashScreen = SplashScreen.create("Adventurer Game");
     primaryStage.setScene(splashScreen);
