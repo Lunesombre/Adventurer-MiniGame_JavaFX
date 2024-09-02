@@ -1,7 +1,6 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.config.SceneConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import javafx.scene.Scene;
@@ -16,25 +15,26 @@ public class GameMapScene extends Scene {
   private static final int PADDING = 20;
   private GameMap gameMap;
   private Pane gamePane;
+  private final SharedSize sharedSize;
 
 
   //V3 pattern Factory
-  private GameMapScene(StackPane root, double width, double height) {
-    super(root, width, height);
+  private GameMapScene(StackPane root, SharedSize sharedSize) {
+    super(root, sharedSize.getWidth(), sharedSize.getHeight());
+    this.sharedSize = sharedSize;
   }
 
   public static GameMapScene create(GameMap gameMap, SharedSize sharedSize) {
     StackPane root = new StackPane();
-    GameMapScene scene = new GameMapScene(root, sharedSize.getWidth(), sharedSize.getHeight());
+    GameMapScene scene = new GameMapScene(root, sharedSize);
     scene.gameMap = gameMap;
     scene.initializeScene();
     return scene;
   }
 
   private void initializeScene() {
-    SceneConfig config = SceneConfig.getInstance();
-    int windowWidth = config.getWidth();
-    int windowHeight = config.getHeight();
+    double windowWidth = sharedSize.getWidth();
+    double windowHeight = sharedSize.getHeight();
 
     StackPane root = (StackPane) getRoot();
     root.setPrefSize(windowWidth, windowHeight);

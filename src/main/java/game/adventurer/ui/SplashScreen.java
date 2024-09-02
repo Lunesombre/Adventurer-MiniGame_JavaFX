@@ -1,7 +1,7 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.config.SceneConfig;
+import game.adventurer.config.AppConfig;
 import game.adventurer.exceptions.FontLoadException;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -35,33 +35,28 @@ public class SplashScreen extends Scene {
       stops); // can use a LinearGradient on TextFill as it extends Paint
 
 
-  private SplashScreen(StackPane root, int width, int height, String titleFontPath, SharedSize sharedSize) {
-    super(root, width, height);
+  private SplashScreen(StackPane root, String titleFontPath, SharedSize sharedSize) {
+    super(root, sharedSize.getWidth(), sharedSize.getHeight());
     this.titleFontPath = titleFontPath;
     this.sharedSize = sharedSize;
-    this.sharedSize.setWidth(width);
-    this.sharedSize.setHeight(height);
+
   }
 
   //factory
   public static SplashScreen create(String appName, SharedSize sharedSize) {
-    SceneConfig config = SceneConfig.getInstance();
+    AppConfig config = AppConfig.getInstance();
     StackPane root = new StackPane();
-    SplashScreen scene = new SplashScreen(root, config.getWidth(), config.getHeight(), config.getTitleFontPath(), sharedSize);
+    SplashScreen scene = new SplashScreen(root, config.getTitleFontPath(), sharedSize);
     scene.appName = appName;
     scene.initialize();
     return scene;
   }
 
   private void initialize() {
-    SceneConfig config = SceneConfig.getInstance();
-    int windowWidth = config.getWidth();
-    int windowHeight = config.getHeight();
 
     StackPane root = (StackPane) getRoot();
-    root.setPrefSize(windowWidth, windowHeight);
 
-    Font titleFont = loadCustomFont(windowHeight);
+    Font titleFont = loadCustomFont(root.getHeight());
 
     Label nameLabel = new Label(appName);
     nameLabel.setFont(titleFont);
@@ -81,13 +76,6 @@ public class SplashScreen extends Scene {
   }
 
   private void updateSize() {
-    SceneConfig config = SceneConfig.getInstance();
-    int windowWidth = config.getWidth();
-    int windowHeight = config.getHeight();
-
-    StackPane root = (StackPane) getRoot();
-    root.setPrefSize(windowWidth, windowHeight);
-
     sharedSize.setWidth(getWidth());
     sharedSize.setHeight((getHeight()));
   }
