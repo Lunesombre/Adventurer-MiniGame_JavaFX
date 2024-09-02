@@ -1,5 +1,6 @@
 package game.adventurer.ui;
 
+import game.adventurer.common.SharedSize;
 import game.adventurer.config.SceneConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
@@ -18,14 +19,13 @@ public class GameMapScene extends Scene {
 
 
   //V3 pattern Factory
-  private GameMapScene(StackPane root, int width, int height) {
+  private GameMapScene(StackPane root, double width, double height) {
     super(root, width, height);
   }
 
-  public static GameMapScene create(GameMap gameMap) {
-    SceneConfig config = SceneConfig.getInstance();
+  public static GameMapScene create(GameMap gameMap, SharedSize sharedSize) {
     StackPane root = new StackPane();
-    GameMapScene scene = new GameMapScene(root, config.getWidth(), config.getHeight());
+    GameMapScene scene = new GameMapScene(root, sharedSize.getWidth(), sharedSize.getHeight());
     scene.gameMap = gameMap;
     scene.initializeScene();
     return scene;

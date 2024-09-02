@@ -1,5 +1,6 @@
 package game.adventurer.ui;
 
+import game.adventurer.common.SharedSize;
 import game.adventurer.config.SceneConfig;
 import game.adventurer.exceptions.FontLoadException;
 import javafx.beans.binding.Bindings;
@@ -21,6 +22,7 @@ public class SplashScreen extends Scene {
   public static final Logger LOG = LoggerFactory.getLogger(SplashScreen.class);
   private final String titleFontPath;
   private static final double FONT_SIZE_RATIO = 0.13;
+  private final SharedSize sharedSize;
 
   private String appName;
 
@@ -29,26 +31,29 @@ public class SplashScreen extends Scene {
       new Stop(33, Color.web("#ff8c00")),
       new Stop(66, Color.web("#ff0080"))
   };
-  private final LinearGradient lg1 = new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE,
+  private final LinearGradient titleGradient = new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE,
       stops); // can use a LinearGradient on TextFill as it extends Paint
 
 
-  private SplashScreen(StackPane root, int width, int height, String titleFontPath) {
+  private SplashScreen(StackPane root, int width, int height, String titleFontPath, SharedSize sharedSize) {
     super(root, width, height);
     this.titleFontPath = titleFontPath;
+    this.sharedSize = sharedSize;
+    this.sharedSize.setWidth(width);
+    this.sharedSize.setHeight(height);
   }
 
   //factory
-  public static SplashScreen create(String appName) throws FontLoadException {
+  public static SplashScreen create(String appName, SharedSize sharedSize) {
     SceneConfig config = SceneConfig.getInstance();
     StackPane root = new StackPane();
-    SplashScreen scene = new SplashScreen(root, config.getWidth(), config.getHeight(), config.getTitleFontPath());
+    SplashScreen scene = new SplashScreen(root, config.getWidth(), config.getHeight(), config.getTitleFontPath(), sharedSize);
     scene.appName = appName;
     scene.initialize();
     return scene;
   }
 
-  private void initialize() throws FontLoadException {
+  private void initialize() {
     SceneConfig config = SceneConfig.getInstance();
     int windowWidth = config.getWidth();
     int windowHeight = config.getHeight();
@@ -61,7 +66,7 @@ public class SplashScreen extends Scene {
     Label nameLabel = new Label(appName);
     nameLabel.setFont(titleFont);
     nameLabel.setPadding(new Insets(40, 40, 40, 40));
-    nameLabel.setTextFill(lg1);
+    nameLabel.setTextFill(titleGradient);
 
     root.getChildren().add(nameLabel);
     root.setStyle("-fx-background-color: #403f3f;");
@@ -82,9 +87,12 @@ public class SplashScreen extends Scene {
 
     StackPane root = (StackPane) getRoot();
     root.setPrefSize(windowWidth, windowHeight);
+
+    sharedSize.setWidth(getWidth());
+    sharedSize.setHeight((getHeight()));
   }
 
-  private Font loadCustomFont(double initialSize) throws FontLoadException {
+  private Font loadCustomFont(double initialSize) {
     Font titleFont;
     try {
       titleFont = Font.loadFont(getClass().getResourceAsStream(titleFontPath), initialSize * FONT_SIZE_RATIO);
