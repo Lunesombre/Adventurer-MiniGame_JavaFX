@@ -1,42 +1,38 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.config.AppConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
-import java.util.Objects;
-import javafx.scene.Scene;
+import game.adventurer.ui.common.BaseScene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
-public class GameMapScene extends Scene {
+public class GameMapScene extends BaseScene {
 
   private static final int PADDING = 20;
   private GameMap gameMap;
   private Pane gamePane;
-  private final SharedSize sharedSize;
+//  private final SharedSize sharedSize;
 
 
   //V3 pattern Factory
   private GameMapScene(StackPane root, SharedSize sharedSize) {
-    super(root, sharedSize.getWidth(), sharedSize.getHeight());
-    this.sharedSize = sharedSize;
+    super(root, sharedSize);
   }
 
   public static GameMapScene create(GameMap gameMap, SharedSize sharedSize) {
     StackPane root = new StackPane();
     GameMapScene scene = new GameMapScene(root, sharedSize);
     scene.gameMap = gameMap;
-    scene.getStylesheets().add(Objects.requireNonNull(GameMapScene.class.getResource(AppConfig.getInstance().getGlobalStylePath())).toExternalForm());
-
-    scene.initializeScene();
+    scene.initialize();
     return scene;
   }
 
-  private void initializeScene() {
+  @Override
+  protected void initialize() {
     double windowWidth = sharedSize.getWidth();
     double windowHeight = sharedSize.getHeight();
 
@@ -51,7 +47,7 @@ public class GameMapScene extends Scene {
     widthProperty().addListener((obs, oldVal, newVal) -> updateGameMap());
     heightProperty().addListener((obs, oldVal, newVal) -> updateGameMap());
 
-    // Initialiser la carte
+    // Initialize the map
     updateGameMap();
   }
 

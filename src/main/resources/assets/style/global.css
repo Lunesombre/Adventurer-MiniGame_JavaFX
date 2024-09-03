@@ -1,12 +1,12 @@
 @font-face {
   font-family: 'Luciole';
-  src: url('../fonts/Luciole-Regular.ttf');
+  src: url('../fonts/Luciole-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: 'Luciole';
-  src: url('../fonts/Luciole-Bold.ttf');
   font-weight: bold;
+  src: url('../fonts/Luciole-Bold.ttf') format('truetype');
 }
 
 /* .root is the root element of all scenes in JavaFx so things defined in .root are shared amongst all scenes */
