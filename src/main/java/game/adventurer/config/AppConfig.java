@@ -17,6 +17,9 @@ public final class AppConfig {
   @Value("${app.title.font.path}")
   private String titleFontPath;
 
+  @Getter
+  @Value("${app.global.css.path}")
+  private String globalStylePath;
 
   private AppConfig() {
   }

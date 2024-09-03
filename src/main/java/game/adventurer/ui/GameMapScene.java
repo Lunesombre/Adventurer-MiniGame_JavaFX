@@ -1,8 +1,10 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
+import game.adventurer.config.AppConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
+import java.util.Objects;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -28,6 +30,8 @@ public class GameMapScene extends Scene {
     StackPane root = new StackPane();
     GameMapScene scene = new GameMapScene(root, sharedSize);
     scene.gameMap = gameMap;
+    scene.getStylesheets().add(Objects.requireNonNull(GameMapScene.class.getResource(AppConfig.getInstance().getGlobalStylePath())).toExternalForm());
+
     scene.initializeScene();
     return scene;
   }

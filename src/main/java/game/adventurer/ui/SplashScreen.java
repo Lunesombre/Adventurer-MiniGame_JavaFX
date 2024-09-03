@@ -3,6 +3,7 @@ package game.adventurer.ui;
 import game.adventurer.common.SharedSize;
 import game.adventurer.config.AppConfig;
 import game.adventurer.exceptions.FontLoadException;
+import java.util.Objects;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -48,6 +49,7 @@ public class SplashScreen extends Scene {
     StackPane root = new StackPane();
     SplashScreen scene = new SplashScreen(root, config.getTitleFontPath(), sharedSize);
     scene.appName = appName;
+    scene.getStylesheets().add(Objects.requireNonNull(SplashScreen.class.getResource(config.getGlobalStylePath())).toExternalForm());
     scene.initialize();
     return scene;
   }
