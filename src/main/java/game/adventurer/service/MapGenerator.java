@@ -18,13 +18,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class MapGenerator {
 
+  private MapGenerator() {
+  }
+
   public static final float MIN_WOOD_PERCENTAGE = 0.25f;
   public static final float MAX_WOOD_PERCENTAGE = 0.5f;
   public static final float MIN_DISTANCE_FROM_ADVENTURER_PERCENTAGE = 0.25f;
   public static final Logger LOG = LoggerFactory.getLogger(MapGenerator.class);
   private static final RandomGenerator random = RandomGenerator.getDefault();
 
-  public static GameMap generateMap(int width, int height) throws NoValidRangeException {
+  public static GameMap generateMap(int width, int height, String adventurerName) throws NoValidRangeException {
     GameMap map;
     Adventurer adventurer;
     Treasure treasure;
@@ -40,12 +43,12 @@ public class MapGenerator {
         }
       }
 
-      // Générer des zones de bois aléatoires
+      // Generate randomly placed woods
       generateWoodAreas(grid, width, height);
 
-      // Adventurer creation (later will require a name from user)
-      // location, will be random on the border of the map later
-      String adventurerName = "Michel";
+      // Adventurer creation
+      // location is random on the border of the map
+
       int adventurerXStart;
       int adventurerYStart;
       do {
@@ -61,7 +64,7 @@ public class MapGenerator {
           }
         }
       } while (grid[adventurerYStart][adventurerXStart].getType() != Type.PATH);
-      LOG.info("Position de l'aventurier : {},{}", adventurerXStart, adventurerYStart);
+      LOG.info("Position de l'aventurier : x={}, y={}", adventurerXStart, adventurerYStart);
       int treasureX;
       int treasureY;
       int minXDistance = (int) (MIN_DISTANCE_FROM_ADVENTURER_PERCENTAGE * width);
@@ -76,12 +79,12 @@ public class MapGenerator {
         // randomly set Y
         treasureY = chooseRandomPosition(possibleYRanges, 'Y');
       } while (grid[treasureY][treasureX].getType() != Type.PATH);
-      LOG.info("Treasure location : {},{}", treasureX, treasureY);
+      LOG.info("Treasure location : x={}, y={}", treasureX, treasureY);
       treasure = new Treasure(treasureX, treasureY);
 
       adventurer = new Adventurer(adventurerName, adventurerXStart, adventurerYStart, 1, 1);
 
-      // Vérification du chemin
+      // Path verification
 
       map = new GameMap(grid, width, height, adventurer, treasure);
     } while (!checkPath(map, adventurer, treasure));
@@ -91,18 +94,18 @@ public class MapGenerator {
   }
 
   private static boolean checkPath(GameMap gameMap, Adventurer adventurer, Treasure treasure) {
-    // Implémentation de l'algorithme de pathfinding : BFS (Breadth-First Search) ou A* voire Dijkstra ? => BFS à l'air plus easy
+    // Pathfinding algorithm: BFS (Breadth-First Search) or A* or even Dijkstra? => BFS looks easier
     int width = gameMap.getMapWidth();
     int height = gameMap.getMapHeight();
     Tile[][] grid = gameMap.getGrid();
 
     boolean[][] visited = new boolean[height][width];
     Queue<int[]> queue = new LinkedList<>();
-    // Ajouter la position de départ (l'aventurier) à la file
+    // Add starting position (adventurer) to queue
     queue.offer(new int[]{adventurer.getY(), adventurer.getX()});
     visited[adventurer.getY()][adventurer.getX()] = true;
 
-    // Définir les directions possibles (haut, droite, bas, gauche)
+    // Define possible directions (up, right, down, left)
     int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
 
     while (!queue.isEmpty()) {
@@ -110,17 +113,17 @@ public class MapGenerator {
       int y = current[0];
       int x = current[1];
 
-      // Si nous avons atteint le trésor, un chemin existe
+      // If the treasure is reached, a path exists
       if (y == treasure.getY() && x == treasure.getX()) {
         return true;
       }
 
-      // Vérifier toutes les directions possibles
+      // Verifies all directions
       for (int[] dir : directions) {
         int newY = y + dir[0];
         int newX = x + dir[1];
 
-        // Vérifier si la nouvelle position est valide et non visitée
+        // Check that the new position is valid and not visited
         if (newY >= 0 && newY < height && newX >= 0 && newX < width
             && !visited[newY][newX] && grid[newY][newX].getType() == Type.PATH) {
           queue.offer(new int[]{newY, newX});
@@ -129,20 +132,19 @@ public class MapGenerator {
       }
     }
 
-    // Si nous arrivons ici, aucun chemin n'a été trouvé
+    // If we get here, no path was found.
     return false;
   }
 
-  // Fonction pour calculer les plages possibles
   private static List<int[]> calculatePossibleRanges(int adventurerPos, int minDistance, int maxBound) {
     List<int[]> possibleRanges = new ArrayList<>();
 
-    // Plage à gauche/en haut de l'aventurier
+    // Range to the left/top of the adventurer
     if (adventurerPos - minDistance > 0) {
       possibleRanges.add(new int[]{0, adventurerPos - minDistance});
     }
 
-    // Plage à droite/en bas de l'aventurier
+    // Range to the right/bottom of the adventurer
     if (adventurerPos + minDistance < maxBound) {
       possibleRanges.add(new int[]{adventurerPos + minDistance, maxBound - 1});
     }
@@ -150,7 +152,7 @@ public class MapGenerator {
     return possibleRanges;
   }
 
-  // Fonction pour choisir une position aléatoire dans les plages données
+  // Function for selecting a random position within a given range
   static int chooseRandomPosition(List<int[]> possibleRanges, char axis) throws NoValidRangeException {
     if (!possibleRanges.isEmpty()) {
       int[] selectedRange = possibleRanges.get(random.nextInt(possibleRanges.size()));
