@@ -1,13 +1,11 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.config.AppConfig;
 import game.adventurer.model.MapSize;
-import java.util.Objects;
+import game.adventurer.ui.common.BaseScene;
 import java.util.function.BiConsumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -18,9 +16,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import lombok.Getter;
 
-public class PlayerSetupScene extends Scene {
+public class PlayerSetupScene extends BaseScene {
 
-  private final SharedSize sharedSize;
   private TextField adventurerNameField;
   private ToggleGroup mapSizeGroup;
   private Button startButton;
@@ -30,14 +27,12 @@ public class PlayerSetupScene extends Scene {
 
 
   public PlayerSetupScene(SharedSize sharedSize) {
-    super(new VBox(), sharedSize.getWidth(), sharedSize.getHeight());
-    this.sharedSize = sharedSize;
-    String stylesheetPath = AppConfig.getInstance().getGlobalStylePath();
-    getStylesheets().add(Objects.requireNonNull(PlayerSetupScene.class.getResource(stylesheetPath)).toExternalForm());
+    super(new VBox(), sharedSize);
     initialize();
   }
 
-  private void initialize() {
+  @Override
+  protected void initialize() {
     Label errorLabel;
     VBox root = (VBox) getRoot();
     root.setAlignment(Pos.CENTER);
@@ -128,10 +123,6 @@ public class PlayerSetupScene extends Scene {
     });
   }
 
-  private void updateSize() {
-    sharedSize.setWidth(getWidth());
-    sharedSize.setHeight((getHeight()));
-  }
 
   private boolean isValidAdventurerName(String name) {
     if (name.isEmpty() || name.length() > 20) {

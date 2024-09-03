@@ -3,10 +3,9 @@ package game.adventurer.ui;
 import game.adventurer.common.SharedSize;
 import game.adventurer.config.AppConfig;
 import game.adventurer.exceptions.FontLoadException;
-import java.util.Objects;
+import game.adventurer.ui.common.BaseScene;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -18,12 +17,11 @@ import javafx.scene.text.FontWeight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SplashScreen extends Scene {
+public class SplashScreen extends BaseScene {
 
   public static final Logger LOG = LoggerFactory.getLogger(SplashScreen.class);
   private final String titleFontPath;
   private static final double FONT_SIZE_RATIO = 0.13;
-  private final SharedSize sharedSize;
 
   private String appName;
 
@@ -37,9 +35,8 @@ public class SplashScreen extends Scene {
 
 
   private SplashScreen(StackPane root, String titleFontPath, SharedSize sharedSize) {
-    super(root, sharedSize.getWidth(), sharedSize.getHeight());
+    super(root, sharedSize);
     this.titleFontPath = titleFontPath;
-    this.sharedSize = sharedSize;
 
   }
 
@@ -49,13 +46,12 @@ public class SplashScreen extends Scene {
     StackPane root = new StackPane();
     SplashScreen scene = new SplashScreen(root, config.getTitleFontPath(), sharedSize);
     scene.appName = appName;
-    scene.getStylesheets().add(Objects.requireNonNull(SplashScreen.class.getResource(config.getGlobalStylePath())).toExternalForm());
     scene.initialize();
     return scene;
   }
 
-  private void initialize() {
-
+  @Override
+  protected void initialize() {
     StackPane root = (StackPane) getRoot();
 
     Font titleFont = loadCustomFont(root.getHeight());
@@ -77,11 +73,6 @@ public class SplashScreen extends Scene {
     heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
   }
 
-  private void updateSize() {
-    sharedSize.setWidth(getWidth());
-    sharedSize.setHeight((getHeight()));
-  }
-
   private Font loadCustomFont(double initialSize) {
     Font titleFont;
     try {
@@ -95,5 +86,6 @@ public class SplashScreen extends Scene {
     }
     return titleFont;
   }
+
 
 }
