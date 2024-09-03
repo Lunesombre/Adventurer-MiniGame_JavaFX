@@ -3,8 +3,10 @@ package game.adventurer;
 import game.adventurer.common.SharedSize;
 import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
+import game.adventurer.model.MapSize;
 import game.adventurer.service.MapGenerator;
 import game.adventurer.ui.GameMapScene;
+import game.adventurer.ui.PlayerSetupScene;
 import game.adventurer.ui.SplashScreen;
 import game.adventurer.util.ScreenUtils;
 import javafx.animation.PauseTransition;
@@ -46,15 +48,22 @@ public class AdventurerGameApp extends Application {
 
     // Transition to the game scene after 3 seconds
     PauseTransition delay = new PauseTransition(Duration.seconds(3));
-    delay.setOnFinished(event -> showGameMap());
+    delay.setOnFinished(event -> showPlayerSetup());
     delay.play();
   }
 
-  private void showGameMap() {
+  private void showPlayerSetup() {
+    PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize);
+    playerSetupScene.setOnStartGame(this::startGame);
+    primaryStage.setScene(playerSetupScene);
+  }
+
+  private void startGame(String playerName, MapSize mapSize) {
     try {
-      GameMap gameMap = MapGenerator.generateMap(20, 20);
+      GameMap gameMap = MapGenerator.generateMap(mapSize.getSize(), mapSize.getSize(), playerName);
       GameMapScene gameMapScene = GameMapScene.create(gameMap, sharedSize);
       primaryStage.setScene(gameMapScene);
+      LOG.info("Starting game with player: {}, and map size: {}", playerName, mapSize);
     } catch (NoValidRangeException e) {
       LOG.error(e.getMessage(), e);
     }
