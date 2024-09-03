@@ -1,7 +1,9 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
+import game.adventurer.config.AppConfig;
 import game.adventurer.model.MapSize;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,6 +32,8 @@ public class PlayerSetupScene extends Scene {
   public PlayerSetupScene(SharedSize sharedSize) {
     super(new VBox(), sharedSize.getWidth(), sharedSize.getHeight());
     this.sharedSize = sharedSize;
+    String stylesheetPath = AppConfig.getInstance().getGlobalStylePath();
+    getStylesheets().add(Objects.requireNonNull(PlayerSetupScene.class.getResource(stylesheetPath)).toExternalForm());
     initialize();
   }
 
@@ -43,6 +47,7 @@ public class PlayerSetupScene extends Scene {
 
     Label titleLabel = new Label("Adventurer Setup");
     titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #46a7b3");
+    titleLabel.getStyleClass().add("bold-text");
 
     adventurerNameField = new TextField();
     adventurerNameField.setPromptText("Enter Adventurer Name");
