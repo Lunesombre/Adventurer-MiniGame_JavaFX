@@ -64,7 +64,7 @@ public class MapGenerator {
           }
         }
       } while (grid[adventurerYStart][adventurerXStart].getType() != Type.PATH);
-      LOG.info("Position de l'aventurier : x={}, y={}", adventurerXStart, adventurerYStart);
+      LOG.info("Position de l'aventurier : tileX={}, tileY={}", adventurerXStart, adventurerYStart);
       int treasureX;
       int treasureY;
       int minXDistance = (int) (MIN_DISTANCE_FROM_ADVENTURER_PERCENTAGE * width);
@@ -79,13 +79,12 @@ public class MapGenerator {
         // randomly set Y
         treasureY = chooseRandomPosition(possibleYRanges, 'Y');
       } while (grid[treasureY][treasureX].getType() != Type.PATH);
-      LOG.info("Treasure location : x={}, y={}", treasureX, treasureY);
+      LOG.info("Treasure location : tileX={}, tileY={}", treasureX, treasureY);
       treasure = new Treasure(treasureX, treasureY);
 
       adventurer = new Adventurer(adventurerName, adventurerXStart, adventurerYStart, 1, 1);
 
       // Path verification
-
       map = new GameMap(grid, width, height, adventurer, treasure);
     } while (!checkPath(map, adventurer, treasure));
     LOG.info("LoopCount = {}", loopCounter);
@@ -102,8 +101,8 @@ public class MapGenerator {
     boolean[][] visited = new boolean[height][width];
     Queue<int[]> queue = new LinkedList<>();
     // Add starting position (adventurer) to queue
-    queue.offer(new int[]{adventurer.getY(), adventurer.getX()});
-    visited[adventurer.getY()][adventurer.getX()] = true;
+    queue.offer(new int[]{adventurer.getTileY(), adventurer.getTileX()});
+    visited[adventurer.getTileY()][adventurer.getTileX()] = true;
 
     // Define possible directions (up, right, down, left)
     int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
@@ -179,9 +178,9 @@ public class MapGenerator {
        */
 //      int woodSize = random.nextInt(3) + 2; // Taille entre 2 et 4
 //
-//      for (int y = woodY; y < Math.min(woodY + woodSize, height); y++) {
-//        for (int x = woodX; x < Math.min(woodX + woodSize, width); x++) {
-//          grid[y][x].setType(Tile.Type.WOOD);
+//      for (int tileY = woodY; tileY < Math.min(woodY + woodSize, height); tileY++) {
+//        for (int tileX = woodX; tileX < Math.min(woodX + woodSize, width); tileX++) {
+//          grid[tileY][tileX].setType(Tile.Type.WOOD);
 //        }
 //      }
       grid[woodY][woodX].setType(Tile.Type.WOOD);
