@@ -19,8 +19,8 @@ public class Tile {
   public String toString() {
     return "Tile{" +
         "type=" + type +
-        ", x=" + x +
-        ", y=" + y +
+        ", tileX=" + x +
+        ", tileY=" + y +
         '}';
   }
 }

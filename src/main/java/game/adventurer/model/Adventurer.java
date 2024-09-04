@@ -1,26 +1,26 @@
 package game.adventurer.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
-public class Adventurer {
+public class Adventurer extends Creature {
 
-  private String name;
-  private int x; // Position x on the game map
-  private int y; // Position y on the game map
-  private int health; // unused at first
-  private int moveSpeed; // unused at first, it shall be the number of tiles the player can move per turn
+  public Adventurer(String name, int tileX, int tileY, int health, int moveSpeed) {
+    super(name, tileX, tileY, health, moveSpeed);
+  }
+
+  public Adventurer(String name, int tileX, int tileY) {
+    super(name, tileX, tileY);
+  }
 
   @Override
   public String toString() {
     return "Adventurer{" +
         "name='" + name + '\'' +
-        ", x=" + x +
-        ", y=" + y +
+        ", tileX=" + tileX +
+        ", tileY=" + tileY +
         ", health=" + health +
         ", moveSpeed=" + moveSpeed +
         '}';

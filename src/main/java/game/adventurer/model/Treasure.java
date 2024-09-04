@@ -6,8 +6,8 @@ import lombok.Getter;
 public class Treasure {
 
   private final TreasureItem item;
-  private final int x; // Position x on the game map
-  private final int y; // Position y on the game map
+  private final int x; // Position tileX on the game map
+  private final int y; // Position tileY on the game map
 
   public Treasure(int x, int y) {
     this.item = new TreasureItem();
@@ -19,8 +19,8 @@ public class Treasure {
   public String toString() {
     return "Treasure{" +
         "item=" + item.getName() +
-        ", x=" + x +
-        ", y=" + y +
+        ", tileX=" + x +
+        ", tileY=" + y +
         '}';
   }
 }

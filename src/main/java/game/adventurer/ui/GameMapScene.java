@@ -4,18 +4,26 @@ import game.adventurer.common.SharedSize;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.ui.common.BaseScene;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameMapScene extends BaseScene {
 
   private static final int PADDING = 20;
+  public static final Logger LOG = LoggerFactory.getLogger(GameMapScene.class);
   private GameMap gameMap;
   private Pane gamePane;
-//  private final SharedSize sharedSize;
+  private Circle adventurerCircle;
+  private Circle treasureCircle;
+  private double tileSize;
+  private double xOffset;
+  private double yOffset;
 
 
   //V3 pattern Factory
@@ -44,29 +52,98 @@ public class GameMapScene extends BaseScene {
     root.setStyle("-fx-background-color: #403f3f;");
 
     // Add a listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> updateGameMap());
-    heightProperty().addListener((obs, oldVal, newVal) -> updateGameMap());
+    widthProperty().addListener((obs, oldVal, newVal) -> handleResize());
+    heightProperty().addListener((obs, oldVal, newVal) -> handleResize());
+
+    // Set handler for keyboard events
+    setOnKeyPressed(this::handleKeyPress);
 
     // Initialize the map
-    updateGameMap();
+    initializeGameMap();
   }
 
-  private void updateGameMap() {
-    gamePane.getChildren().clear();
-    double windowWidth = getWidth();
-    double windowHeight = getHeight();
-    int mapWidth = gameMap.getMapWidth();
-    int mapHeight = gameMap.getMapHeight();
+  private void handleKeyPress(KeyEvent event) {
+    boolean moved = false;
+    switch (event.getCode()) {
+      case UP -> moved = gameMap.moveAdventurer(0, -1);
+      case DOWN -> moved = gameMap.moveAdventurer(0, 1);
+      case LEFT -> moved = gameMap.moveAdventurer(-1, 0);
+      case RIGHT -> moved = gameMap.moveAdventurer(1, 0);
+      default -> handleOtherKeys(event);
+    }
+    if (moved) {
+      updateGameView(); // Updates view only after movement.
+    }
+  }
 
-    // Calculate tile size to adapt to window
-    double tileSize = Math.min(
-        (windowWidth - 2 * PADDING) / mapWidth,
-        (windowHeight - 2 * PADDING) / mapHeight
-    );
+  private void handleOtherKeys(KeyEvent event) {
+    LOG.warn("Unhandled key press: {}", event.getCode());
+  }
+
+  private void updateGameView() {
+    int tileX = gameMap.getAdventurer().getTileX();
+    int tileY = gameMap.getAdventurer().getTileY();
 
     // Calculate the offset to center the map
-    double xOffset = (windowWidth - mapWidth * tileSize) / 2;
-    double yOffset = (windowHeight - mapHeight * tileSize) / 2;
+    xOffset = (getWidth() - gameMap.getMapWidth() * tileSize) / 2;
+    yOffset = (getHeight() - gameMap.getMapHeight() * tileSize) / 2;
+
+    // Update the Adventurer's position on the map
+    double advX = xOffset + (tileX + 0.5) * tileSize;
+    double advY = yOffset + (tileY + 0.5) * tileSize;
+
+    LOG.debug("Scene dimensions: {} x {}", getWidth(), getHeight());
+    LOG.debug("Map dimensions: {} x {}", gameMap.getMapWidth(), gameMap.getMapHeight());
+    LOG.debug("Tile size: {}", tileSize);
+    LOG.debug("Offsets: x={}, y={}", xOffset, yOffset);
+
+    adventurerCircle.setCenterX(advX);
+    adventurerCircle.setCenterY(advY);
+
+    LOG.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
+        gameMap.getAdventurer().getTileX(),
+        gameMap.getAdventurer().getTileY(),
+        advX, advY);
+    LOG.info("Adventurer position: Tile({}, {})",
+        gameMap.getAdventurer().getTileX(),
+        gameMap.getAdventurer().getTileY());
+  }
+
+  private void handleResize() {
+    int mapWidth = gameMap.getMapWidth();
+    int mapHeight = gameMap.getMapHeight();
+    calculateMapDimensions(mapWidth, mapHeight);
+
+    // Update size and position of each tile
+    for (int y = 0; y < mapHeight; y++) {
+      for (int x = 0; x < mapWidth; x++) {
+        Rectangle rect = (Rectangle) gamePane.getChildren().get(y * mapWidth + x);
+        rect.setX(xOffset + x * tileSize);
+        rect.setY(yOffset + y * tileSize);
+        rect.setWidth(tileSize);
+        rect.setHeight(tileSize);
+      }
+    }
+
+    // Update size and position of the adventurer
+    adventurerCircle.setRadius(tileSize / 2);
+    updateGameView();
+
+    // Update size and position of treasure
+    treasureCircle.setRadius(tileSize / 2);
+    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getX() + 0.5) * tileSize);
+    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
+
+    // Forcing a visual update
+    gamePane.requestLayout();
+  }
+
+
+  private void initializeGameMap() {
+    gamePane.getChildren().clear();
+    int mapWidth = gameMap.getMapWidth();
+    int mapHeight = gameMap.getMapHeight();
+    calculateMapDimensions(mapWidth, mapHeight);
 
     // Create and position tiles representation
     for (int y = 0; y < mapHeight; y++) {
@@ -82,19 +159,36 @@ public class GameMapScene extends BaseScene {
       }
     }
 
-    // Adding adventurer
-    Circle adventurer = new Circle(tileSize / 2, Color.BLUE);
-    adventurer.setCenterX(xOffset + (gameMap.getAdventurer().getX() + 0.5) * tileSize);
-    adventurer.setCenterY(yOffset + (gameMap.getAdventurer().getY() + 0.5) * tileSize);
-    gamePane.getChildren().add(adventurer);
-
     // Adding treasure
-    Circle treasure = new Circle(tileSize / 2, Color.GOLD);
-    treasure.setCenterX(xOffset + (gameMap.getTreasure().getX() + 0.5) * tileSize);
-    treasure.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
-    gamePane.getChildren().add(treasure);
+    treasureCircle = new Circle(tileSize / 2, Color.GOLD);
+    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getX() + 0.5) * tileSize);
+    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
+    gamePane.getChildren().add(treasureCircle);
 
+    // Adding adventurer
+    adventurerCircle = new Circle(tileSize / 2, Color.BLUE);
+    double advX = xOffset + (gameMap.getAdventurer().getTileX() + 0.5) * tileSize;
+    double advY = yOffset + (gameMap.getAdventurer().getTileY() + 0.5) * tileSize;
+    adventurerCircle.setCenterX(advX);
+    adventurerCircle.setCenterY(advY);
+    gamePane.getChildren().add(adventurerCircle);
 
+    updateGameView();
+  }
+
+  private void calculateMapDimensions(int mapWidth, int mapHeight) {
+    double windowWidth = getWidth();
+    double windowHeight = getHeight();
+
+    // Calculate tile size to adapt to window
+    tileSize = Math.min(
+        (windowWidth - 2 * PADDING) / mapWidth,
+        (windowHeight - 2 * PADDING) / mapHeight
+    );
+
+    // Calculate the offset to center the map
+    xOffset = (windowWidth - mapWidth * tileSize) / 2;
+    yOffset = (windowHeight - mapHeight * tileSize) / 2;
   }
 }
 
