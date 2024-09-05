@@ -10,6 +10,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,10 @@ public class GameMapScene extends BaseScene {
   private double tileSize;
   private double xOffset;
   private double yOffset;
+  @Getter
+  private int movesCount;
+  @Setter
+  private Runnable onGameEnd;
 
 
   //V3 pattern Factory
@@ -58,6 +64,8 @@ public class GameMapScene extends BaseScene {
     // Set handler for keyboard events
     setOnKeyPressed(this::handleKeyPress);
 
+    movesCount = 0;
+
     // Initialize the map
     initializeGameMap();
   }
@@ -65,14 +73,34 @@ public class GameMapScene extends BaseScene {
   private void handleKeyPress(KeyEvent event) {
     boolean moved = false;
     switch (event.getCode()) {
-      case UP -> moved = gameMap.moveAdventurer(0, -1);
-      case DOWN -> moved = gameMap.moveAdventurer(0, 1);
-      case LEFT -> moved = gameMap.moveAdventurer(-1, 0);
-      case RIGHT -> moved = gameMap.moveAdventurer(1, 0);
+      case UP -> {
+        moved = gameMap.moveAdventurer(0, -1);
+        movesCount++;
+      }
+      case DOWN -> {
+        moved = gameMap.moveAdventurer(0, 1);
+        movesCount++;
+      }
+      case LEFT -> {
+        moved = gameMap.moveAdventurer(-1, 0);
+        movesCount++;
+      }
+      case RIGHT -> {
+        moved = gameMap.moveAdventurer(1, 0);
+        movesCount++;
+      }
       default -> handleOtherKeys(event);
     }
     if (moved) {
-      updateGameView(); // Updates view only after movement.
+      if (isTreasureCollected()) {
+        if (onGameEnd != null) {
+          onGameEnd.run();
+        } else {
+          LOG.warn("onGameEnd is null");
+        }
+      } else {
+        updateGameView(); // Updates view only after movement.
+      }
     }
   }
 
@@ -131,8 +159,8 @@ public class GameMapScene extends BaseScene {
 
     // Update size and position of treasure
     treasureCircle.setRadius(tileSize / 2);
-    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getX() + 0.5) * tileSize);
-    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
+    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize);
+    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize);
 
     // Forcing a visual update
     gamePane.requestLayout();
@@ -161,8 +189,8 @@ public class GameMapScene extends BaseScene {
 
     // Adding treasure
     treasureCircle = new Circle(tileSize / 2, Color.GOLD);
-    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getX() + 0.5) * tileSize);
-    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getY() + 0.5) * tileSize);
+    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize);
+    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize);
     gamePane.getChildren().add(treasureCircle);
 
     // Adding adventurer
@@ -190,6 +218,12 @@ public class GameMapScene extends BaseScene {
     xOffset = (windowWidth - mapWidth * tileSize) / 2;
     yOffset = (windowHeight - mapHeight * tileSize) / 2;
   }
+
+  private boolean isTreasureCollected() {
+    return gameMap.getAdventurer().getTileX() == gameMap.getTreasure().getTileX() &&
+        gameMap.getAdventurer().getTileY() == gameMap.getTreasure().getTileY();
+  }
+
 }
 
 

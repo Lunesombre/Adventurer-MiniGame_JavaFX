@@ -7,6 +7,7 @@ import game.adventurer.ui.common.BaseScene;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
+import javafx.scene.effect.Bloom;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -60,6 +61,10 @@ public class SplashScreen extends BaseScene {
     nameLabel.setFont(titleFont);
     nameLabel.setPadding(new Insets(40, 40, 40, 40));
     nameLabel.setTextFill(titleGradient);
+    //Adding a bloom effect on the title
+    Bloom bloom = new Bloom();
+    bloom.setThreshold(0.1);
+    nameLabel.setEffect(bloom);
 
     root.getChildren().add(nameLabel);
     root.setStyle("-fx-background-color: #403f3f;");

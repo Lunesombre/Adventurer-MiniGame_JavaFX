@@ -41,12 +41,13 @@ public class PlayerSetupScene extends BaseScene {
     root.setStyle("-fx-background-color: #403f3f;");
 
     Label titleLabel = new Label("Adventurer Setup");
-    titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #46a7b3");
+    titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #46a7b3;");
     titleLabel.getStyleClass().add("bold-text");
 
     adventurerNameField = new TextField();
     adventurerNameField.setPromptText("Enter Adventurer Name");
-    adventurerNameField.setStyle("-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400");
+    adventurerNameField.setStyle(
+        "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-background-radius: 15px;");
 
     errorLabel = new Label();
     errorLabel.setStyle("-fx-text-fill: red;");
@@ -73,7 +74,6 @@ public class PlayerSetupScene extends BaseScene {
     mapSizeBox.getChildren().addAll(smallMap, mediumMap, largeMap);
 
     startButton = new Button("Start Adventure");
-    startButton.setStyle("-fx-max-width: 400; -fx-font-size:24px; -fx-font-weight: bold; -fx-background-color: #699521");
 
     root.getChildren().addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, startButton);
 
@@ -86,12 +86,12 @@ public class PlayerSetupScene extends BaseScene {
       startButton.setDisable(!isValid);
       if (!isValid) {
         adventurerNameField.setStyle(
-            "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-border-color: red; -fx-border-width: 2px; -fx-border-radius: 5px");
+            "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-border-color: red; -fx-border-width: 2px; -fx-background-radius: 15px; -fx-border-radius: 15px;");
         errorLabel.setText(getValidationMessage(newValue));
         errorLabel.setVisible(true);
       } else {
         adventurerNameField.setStyle(
-            "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-border-color: #2ef32e; -fx-border-width: 2px; -fx-border-radius: 5px");
+            "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-border-color: #2ef32e; -fx-border-width: 2px; -fx-background-radius: 15px; -fx-border-radius: 15px;");
         errorLabel.setVisible(false);
       }
     });
