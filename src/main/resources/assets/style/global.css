@@ -12,6 +12,8 @@
 /* .root is the root element of all scenes in JavaFx so things defined in .root are shared amongst all scenes */
 .root {
   -fx-font-family: 'Luciole';
+  -fx-font-size: 20px;
+  -fx-background-color: rgb(64, 63, 63);
 }
 
 .regular-text {
@@ -20,4 +22,25 @@
 
 .bold-text {
   -fx-font-weight: bold;
+}
+
+
+.button {
+  -fx-cursor: hand;
+  -fx-max-width: 400;
+  -fx-font-size: 24px;
+  -fx-font-weight: bold;
+  -fx-background-color: #699521;
+  -fx-background-radius: 16px;
+  -fx-border-radius: 15px;
+  -fx-border-color: #393838;
+  -fx-border-width: 2px;
+  -fx-background-insets: 0;
+
+}
+
+.button:hover {
+  -fx-background-color: #7fb628;
+  -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.6), 10, 0, 4, 4);
+
 }

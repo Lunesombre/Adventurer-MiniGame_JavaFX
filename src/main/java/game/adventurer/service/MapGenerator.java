@@ -113,7 +113,7 @@ public class MapGenerator {
       int x = current[1];
 
       // If the treasure is reached, a path exists
-      if (y == treasure.getY() && x == treasure.getX()) {
+      if (y == treasure.getTileY() && x == treasure.getTileX()) {
         return true;
       }
 

@@ -5,6 +5,7 @@ import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.MapSize;
 import game.adventurer.service.MapGenerator;
+import game.adventurer.ui.EndGameScene;
 import game.adventurer.ui.GameMapScene;
 import game.adventurer.ui.PlayerSetupScene;
 import game.adventurer.ui.SplashScreen;
@@ -62,11 +63,19 @@ public class AdventurerGameApp extends Application {
     try {
       GameMap gameMap = MapGenerator.generateMap(mapSize.getSize(), mapSize.getSize(), playerName);
       GameMapScene gameMapScene = GameMapScene.create(gameMap, sharedSize);
+      gameMapScene.setOnGameEnd(() -> showEndGame(gameMap, gameMapScene.getMovesCount()));
       primaryStage.setScene(gameMapScene);
       LOG.info("Starting game with player: {}, and map size: {}", playerName, mapSize);
     } catch (NoValidRangeException e) {
       LOG.error(e.getMessage(), e);
     }
   }
+
+  private void showEndGame(GameMap gameMap, int movesCount) {
+    EndGameScene endGameScene = new EndGameScene(sharedSize, gameMap, movesCount);
+    endGameScene.setOnRestartGame(this::showPlayerSetup);
+    primaryStage.setScene(endGameScene);
+  }
+
 
 }
