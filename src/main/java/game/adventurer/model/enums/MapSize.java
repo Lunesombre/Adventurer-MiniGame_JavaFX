@@ -1,4 +1,4 @@
-package game.adventurer.model;
+package game.adventurer.model.enums;
 
 import lombok.Getter;
 

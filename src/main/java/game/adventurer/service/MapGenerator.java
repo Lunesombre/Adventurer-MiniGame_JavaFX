@@ -82,13 +82,13 @@ public class MapGenerator {
       LOG.info("Treasure location : tileX={}, tileY={}", treasureX, treasureY);
       treasure = new Treasure(treasureX, treasureY);
 
-      adventurer = new Adventurer(adventurerName, adventurerXStart, adventurerYStart, 1, 1);
+      adventurer = new Adventurer(adventurerName, adventurerXStart, adventurerYStart);
 
       // Path verification
       map = new GameMap(grid, width, height, adventurer, treasure);
     } while (!checkPath(map, adventurer, treasure));
     LOG.info("LoopCount = {}", loopCounter);
-    LOG.info("The map: {}", map);
+    LOG.debug("The map: {}", map);
     return map;
   }
 

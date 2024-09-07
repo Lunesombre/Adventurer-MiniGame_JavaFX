@@ -1,5 +1,6 @@
 package game.adventurer.model;
 
+import game.adventurer.model.base.Creature;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +19,7 @@ public class Adventurer extends Creature {
   @Override
   public String toString() {
     return "Adventurer{" +
-        "name='" + name + '\'' +
+        "cause='" + name + '\'' +
         ", tileX=" + tileX +
         ", tileY=" + tileY +
         ", health=" + health +

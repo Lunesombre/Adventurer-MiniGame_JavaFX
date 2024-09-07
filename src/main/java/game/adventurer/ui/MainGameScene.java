@@ -1,24 +1,28 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
+import game.adventurer.model.Adventurer;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
+import game.adventurer.model.enums.MoveResult;
 import game.adventurer.ui.common.BaseScene;
+import javafx.animation.FadeTransition;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GameMapScene extends BaseScene {
+public class MainGameScene extends BaseScene {
 
   private static final int PADDING = 20;
-  public static final Logger LOG = LoggerFactory.getLogger(GameMapScene.class);
+  public static final Logger LOG = LoggerFactory.getLogger(MainGameScene.class);
   private GameMap gameMap;
   private Pane gamePane;
   private Circle adventurerCircle;
@@ -30,16 +34,20 @@ public class GameMapScene extends BaseScene {
   private int movesCount;
   @Setter
   private Runnable onGameEnd;
+  @Setter
+  private Runnable onGameOver;
+
+  private final Rectangle effectOverlay = new Rectangle();
 
 
   //V3 pattern Factory
-  private GameMapScene(StackPane root, SharedSize sharedSize) {
+  private MainGameScene(StackPane root, SharedSize sharedSize) {
     super(root, sharedSize);
   }
 
-  public static GameMapScene create(GameMap gameMap, SharedSize sharedSize) {
+  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize) {
     StackPane root = new StackPane();
-    GameMapScene scene = new GameMapScene(root, sharedSize);
+    MainGameScene scene = new MainGameScene(root, sharedSize);
     scene.gameMap = gameMap;
     scene.initialize();
     return scene;
@@ -58,49 +66,78 @@ public class GameMapScene extends BaseScene {
     root.setStyle("-fx-background-color: #403f3f;");
 
     // Add a listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> handleResize());
-    heightProperty().addListener((obs, oldVal, newVal) -> handleResize());
+    widthProperty().addListener((obs, oldVal, newVal) -> {
+      handleResize();
+      effectOverlay.setWidth(newVal.doubleValue());
+    });
+    heightProperty().addListener((obs, oldVal, newVal) -> {
+      handleResize();
+      effectOverlay.setHeight(newVal.doubleValue());
+    });
 
     // Set handler for keyboard events
     setOnKeyPressed(this::handleKeyPress);
 
     movesCount = 0;
 
+    effectOverlay.setWidth(windowWidth);
+    effectOverlay.setHeight(windowHeight);
+    effectOverlay.setVisible(false);
+    root.getChildren().add(effectOverlay); // Must be the last children added to appear above all other children.
+
     // Initialize the map
     initializeGameMap();
   }
 
   private void handleKeyPress(KeyEvent event) {
-    boolean moved = false;
+    MoveResult moveResult = MoveResult.BLOCKED;
     switch (event.getCode()) {
       case UP -> {
-        moved = gameMap.moveAdventurer(0, -1);
+        moveResult = gameMap.moveAdventurer(0, -1);
         movesCount++;
       }
       case DOWN -> {
-        moved = gameMap.moveAdventurer(0, 1);
+        moveResult = gameMap.moveAdventurer(0, 1);
         movesCount++;
       }
       case LEFT -> {
-        moved = gameMap.moveAdventurer(-1, 0);
+        moveResult = gameMap.moveAdventurer(-1, 0);
         movesCount++;
       }
       case RIGHT -> {
-        moved = gameMap.moveAdventurer(1, 0);
+        moveResult = gameMap.moveAdventurer(1, 0);
         movesCount++;
       }
       default -> handleOtherKeys(event);
     }
-    if (moved) {
-      if (isTreasureCollected()) {
-        if (onGameEnd != null) {
-          onGameEnd.run();
+    switch (moveResult) {
+      case MOVED -> {
+        movesCount++;
+        if (isTreasureCollected()) {
+          if (onGameEnd != null) {
+            onGameEnd.run();
+          } else {
+            LOG.warn("onGameEnd is null");
+          }
         } else {
-          LOG.warn("onGameEnd is null");
+          updateGameView();
         }
-      } else {
-        updateGameView(); // Updates view only after movement.
       }
+      case WOUNDED -> {
+        showDamageEffect();
+        if (isAdventurerDead(gameMap.getAdventurer())) {
+          if (onGameOver != null) {
+            onGameOver.run();
+          } else {
+            LOG.warn("onGameOver is null");
+          }
+        }
+
+//        updateGameView(); // Update view to reflect health change
+      }
+      case OUT_OF_BOUNDS -> showOutOfBoundsEffect();
+      case BLOCKED -> {
+      } // Do nothing for blocked moves
     }
   }
 
@@ -132,9 +169,6 @@ public class GameMapScene extends BaseScene {
         gameMap.getAdventurer().getTileX(),
         gameMap.getAdventurer().getTileY(),
         advX, advY);
-    LOG.info("Adventurer position: Tile({}, {})",
-        gameMap.getAdventurer().getTileX(),
-        gameMap.getAdventurer().getTileY());
   }
 
   private void handleResize() {
@@ -169,6 +203,7 @@ public class GameMapScene extends BaseScene {
 
   private void initializeGameMap() {
     gamePane.getChildren().clear();
+
     int mapWidth = gameMap.getMapWidth();
     int mapHeight = gameMap.getMapHeight();
     calculateMapDimensions(mapWidth, mapHeight);
@@ -222,6 +257,34 @@ public class GameMapScene extends BaseScene {
   private boolean isTreasureCollected() {
     return gameMap.getAdventurer().getTileX() == gameMap.getTreasure().getTileX() &&
         gameMap.getAdventurer().getTileY() == gameMap.getTreasure().getTileY();
+  }
+
+  private void showDamageEffect() {
+    effectOverlay.setFill(Color.rgb(255, 0, 0, 0.5));
+    effectOverlay.setVisible(true);
+
+    FadeTransition fade = new FadeTransition(Duration.millis(200), effectOverlay);
+    fade.setFromValue(0.5);
+    fade.setToValue(0.0);
+
+    fade.setOnFinished(event -> effectOverlay.setVisible(false));
+    fade.play();
+  }
+
+  private void showOutOfBoundsEffect() {
+    effectOverlay.setFill(Color.rgb(70, 70, 245, 0.5));
+    effectOverlay.setVisible(true);
+
+    FadeTransition fade = new FadeTransition(Duration.millis(200), effectOverlay);
+    fade.setFromValue(0.5);
+    fade.setToValue(0.0);
+
+    fade.setOnFinished(event -> effectOverlay.setVisible(false));
+    fade.play();
+  }
+
+  private boolean isAdventurerDead(Adventurer adventurer) {
+    return adventurer.getHealth() <= 0;
   }
 
 }

@@ -1,7 +1,7 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.model.MapSize;
+import game.adventurer.model.enums.MapSize;
 import game.adventurer.ui.common.BaseScene;
 import java.util.function.BiConsumer;
 import javafx.geometry.Insets;
@@ -80,7 +80,7 @@ public class PlayerSetupScene extends BaseScene {
     // Adding listeners for resizing
     widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
     heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
-    // Listener for Adventurer's name validation
+    // Listener for Adventurer's cause validation
     adventurerNameField.textProperty().addListener((observable, oldValue, newValue) -> {
       boolean isValid = isValidAdventurerName(newValue);
       startButton.setDisable(!isValid);

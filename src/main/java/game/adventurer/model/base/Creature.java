@@ -1,4 +1,4 @@
-package game.adventurer.model;
+package game.adventurer.model.base;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,10 +10,10 @@ public abstract class Creature {
   protected String name;
   protected int tileX; // Position tileX on the game map
   protected int tileY; // Position tileY on the game map
-  protected int health; // unused at first
+  protected int health; // Number of life points of a Creature
   protected int moveSpeed; // unused at first, it shall be the number of tiles the creature can move per turn
 
-  private static final int DEFAULT_HEALTH = 5;
+  private static final int DEFAULT_HEALTH = 10;
   private static final int DEFAULT_MOVE_SPEED = 1;
 
 
