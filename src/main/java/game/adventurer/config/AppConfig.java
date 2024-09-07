@@ -21,6 +21,10 @@ public final class AppConfig {
   @Value("${app.global.css.path}")
   private String globalStylePath;
 
+  @Getter
+  @Value("${app.images.path}")
+  private String imagesPath;
+
   private AppConfig() {
   }
 
