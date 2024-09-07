@@ -69,10 +69,12 @@ public class MainGameScene extends BaseScene {
     widthProperty().addListener((obs, oldVal, newVal) -> {
       handleResize();
       effectOverlay.setWidth(newVal.doubleValue());
+      updateSize();
     });
     heightProperty().addListener((obs, oldVal, newVal) -> {
       handleResize();
       effectOverlay.setHeight(newVal.doubleValue());
+      updateSize();
     });
 
     // Set handler for keyboard events
@@ -136,8 +138,8 @@ public class MainGameScene extends BaseScene {
 //        updateGameView(); // Update view to reflect health change
       }
       case OUT_OF_BOUNDS -> showOutOfBoundsEffect();
-      case BLOCKED -> {
-      } // Do nothing for blocked moves
+      case BLOCKED -> LOG.info("BLOCKED");
+      // Do nothing for blocked moves
     }
   }
 

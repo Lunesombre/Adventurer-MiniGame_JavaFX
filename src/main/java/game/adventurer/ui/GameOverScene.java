@@ -1,6 +1,7 @@
 package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
+import game.adventurer.config.AppConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.base.Wound;
 import game.adventurer.ui.common.BaseScene;
@@ -20,15 +21,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-// TODO: add working resizing for scene
-// TODO : add working resizing for title-contentBox-button (min is ok, max should be higher)
-// TODO : change last wound background color
-
 public class GameOverScene extends BaseScene {
 
   private final GameMap gameMap; // retrieve the Adventurer and the Wounds list.
   public static final String GAME_OVER_TITLE = "Vous êtes mort, ";
-  public static final String SKULL_PATH = "/assets/images/game_over_skull.png";
+  public static final String SKULL_PATH = AppConfig.getInstance().getImagesPath() + "game_over_skull.png";
   private final Button replayButton = new Button("Rejouer");
   private final Button quitButton = new Button("Quitter");
 
@@ -77,7 +74,7 @@ public class GameOverScene extends BaseScene {
     ListView<Wound> woundsListView = new ListView<>();
     int lastWoundIndex = wounds.size() - 1;
     woundsListView.setCellFactory(lv -> new WoundListCell(lv, lastWoundIndex));
-// ListView configuration
+    // ListView configuration
     woundsListView.setFixedCellSize(-1); // Adapting vertical cell-size
     woundsListView.setPrefHeight(200);
     woundsListView.setMaxHeight(Double.MAX_VALUE);
@@ -101,6 +98,12 @@ public class GameOverScene extends BaseScene {
 
     // Background style
     root.setStyle("-fx-background-color: #2C3E50;");
+
+    // Adding listeners for resizing
+    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
+    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
+
+
   }
 
   public void setOnReplayGame(Runnable action) {
@@ -142,8 +145,8 @@ public class GameOverScene extends BaseScene {
       } else {
         label.setText(wound.getCause().getCauseName() + ": " + wound.getWoundMessage());
 
+        // Styling the last wound cell, then styling each cell with a slightly different background color on even/uneven cells.
         if (getIndex() == lastWoundIndex) {
-          // Styling the last wound cell
           container.setStyle("-fx-background-color: #ba5947; -fx-background-radius: 10; -fx-border-radius: 10;");
         } else if (getIndex() % 2 == 0) {
           container.setStyle("-fx-background-color: #bdbcbc; -fx-background-radius: 10; -fx-border-radius: 10;");
