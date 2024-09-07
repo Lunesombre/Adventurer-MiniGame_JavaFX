@@ -77,6 +77,7 @@ public class AdventurerGameApp extends Application {
   private void showEndGame(GameMap gameMap, int movesCount) {
     EndGameScene endGameScene = new EndGameScene(sharedSize, gameMap, movesCount);
     endGameScene.setOnRestartGame(this::showPlayerSetup);
+    endGameScene.setOnQuitGame(this::quitGame);
     primaryStage.setScene(endGameScene);
   }
 
