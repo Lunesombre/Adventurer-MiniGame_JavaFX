@@ -17,6 +17,7 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
@@ -27,8 +28,11 @@ public class EndGameScene extends BaseScene {
 
   private final GameMap gameMap;
   private final int movesCount;
-  private Button restartButton;
-  public static final String RESTART_BUTTON_LABEL = "Recommencer";
+
+  public static final String RESTART_BUTTON_LABEL = "Rejouer";
+  public static final String QUIT_BUTTON_LABEL = "Quitter jeu";
+  private final Button quitButton = new Button(QUIT_BUTTON_LABEL);
+  private final Button restartButton = new Button(RESTART_BUTTON_LABEL);
 
   public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount) {
     super(new VBox(20), sharedSize);
@@ -70,9 +74,12 @@ public class EndGameScene extends BaseScene {
     Label scoreLabel = new Label("Score : " + calculateScore());
     scoreLabel.setPadding(new Insets(20.0));
 
-    restartButton = new Button(RESTART_BUTTON_LABEL);
+    HBox buttonsBox = new HBox(20);
+    buttonsBox.setAlignment(Pos.CENTER);
+    quitButton.getStyleClass().add("quit-button");
+    buttonsBox.getChildren().addAll(restartButton, quitButton);
 
-    scoreBox.getChildren().addAll(congratsLabel, movesLabel, treasureFlow, scoreLabel, restartButton);
+    scoreBox.getChildren().addAll(congratsLabel, movesLabel, treasureFlow, scoreLabel, buttonsBox);
     root.getChildren().addAll(scoreBox);
 
     // Adding listeners for resizing
@@ -106,6 +113,10 @@ public class EndGameScene extends BaseScene {
 
   public void setOnRestartGame(Runnable action) {
     restartButton.setOnAction(e -> action.run());
+  }
+
+  public void setOnQuitGame(Runnable action) {
+    quitButton.setOnAction(e -> action.run());
   }
 
 

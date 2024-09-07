@@ -28,6 +28,7 @@
 .button {
   -fx-cursor: hand;
   -fx-max-width: 400;
+  -fx-min-width: 200;
   -fx-font-size: 24px;
   -fx-font-weight: bold;
   -fx-background-color: #699521;
