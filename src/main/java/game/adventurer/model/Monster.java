@@ -1,5 +1,7 @@
 package game.adventurer.model;
 
+import game.adventurer.model.base.Creature;
+
 public class Monster extends Creature {
 
   protected Monster(String name, int tileX, int tileY, int health, int moveSpeed) {

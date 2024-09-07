@@ -42,5 +42,25 @@
 .button:hover {
   -fx-background-color: #7fb628;
   -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.6), 10, 0, 4, 4);
+}
 
+.quit-button {
+  -fx-background-color: #933434;
+}
+
+.quit-button:hover {
+  -fx-background-color: #bc4242;
+}
+
+.list-view .scroll-bar:vertical {
+  -fx-background-color: transparent;
+}
+
+.list-view .scroll-bar:vertical .thumb {
+  -fx-background-color: #a0a0a0;
+  -fx-background-radius: 5em;
+}
+
+.list-view .scroll-bar:vertical .track {
+  -fx-background-color: transparent;
 }
