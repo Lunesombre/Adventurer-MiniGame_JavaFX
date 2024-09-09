@@ -44,6 +44,7 @@ public class GameOverScene extends BaseScene {
     //Scene Title
     Label titleLabel = new Label(GAME_OVER_TITLE + gameMap.getAdventurer().getName());
     titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #FF0000;");
+    titleLabel.getStyleClass().add("medieval-font");
 
     // HBox for skull image and the wounds' list.
     HBox contentBox = new HBox(20);
@@ -61,11 +62,7 @@ public class GameOverScene extends BaseScene {
     skullImageView.setClip(clip);
 
     // Inner shadow on skull image
-    InnerShadow innerShadow = new InnerShadow();
-    innerShadow.setRadius(15.0);
-    innerShadow.setOffsetX(5);
-    innerShadow.setOffsetY(5);
-    innerShadow.setColor(Color.rgb(0, 0, 0, 0.5));
+    InnerShadow innerShadow = new InnerShadow(15.0, 5, 5, Color.rgb(0, 0, 0, 0.5));
     skullImageView.setEffect(innerShadow);
 
     // Wounds' list

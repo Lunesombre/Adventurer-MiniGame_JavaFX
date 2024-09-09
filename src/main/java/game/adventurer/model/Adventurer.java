@@ -2,10 +2,8 @@ package game.adventurer.model;
 
 import game.adventurer.model.base.Creature;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 public class Adventurer extends Creature {
 
   public Adventurer(String name, int tileX, int tileY, int health, int moveSpeed) {
