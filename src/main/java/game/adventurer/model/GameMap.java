@@ -53,8 +53,8 @@ public class GameMap {
         WoodsWound wound = new WoodsWound(WoundCause.WOODS);
         wound.setWoundsMessage(adventurer);
         adventurer.setHealth(adventurer.getHealth() - wound.getHealthCost());
-        LOG.error("Blessure : {}", wound.getWoundMessage());
-        LOG.warn("PV de {} : {}", adventurer.getName(), adventurer.getHealth());
+        LOG.debug("Blessure : {}", wound.getWoundMessage());
+        LOG.debug("PV de {} : {}", adventurer.getName(), adventurer.getHealth());
         woundsList.add(wound);
         return MoveResult.WOUNDED;
       } else {

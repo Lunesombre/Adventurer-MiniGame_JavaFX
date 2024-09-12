@@ -9,11 +9,20 @@
   src: url('../fonts/Luciole-Bold.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'MedievalScrollOfWisdom';
+  src: url('../fonts/MedievalScrollOfWisdom.ttf') format('truetype');
+}
+
 /* .root is the root element of all scenes in JavaFx so things defined in .root are shared amongst all scenes */
 .root {
   -fx-font-family: 'Luciole';
   -fx-font-size: 20px;
   -fx-background-color: rgb(64, 63, 63);
+}
+
+.medieval-font {
+  -fx-font-family: 'Medieval Scroll of Wisdom';
 }
 
 .regular-text {
@@ -65,3 +74,4 @@
 .list-view .scroll-bar:vertical .track {
   -fx-background-color: transparent;
 }
+
