@@ -1,5 +1,7 @@
 package game.adventurer;
 
+import static game.adventurer.ui.common.SceneTransitionsManager.crossFadeTransition;
+
 import game.adventurer.common.SharedSize;
 import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
@@ -26,6 +28,7 @@ public class AdventurerGameApp extends Application {
   private SharedSize sharedSize;
   private Stage primaryStage;
   private static final float INITIAL_SCREEN_SIZE_RATIO = 0.8f;
+  public static final String APP_NAME = "Adventurer Game";
   private static final Logger LOG = LoggerFactory.getLogger(AdventurerGameApp.class);
 
   @Override
@@ -45,14 +48,26 @@ public class AdventurerGameApp extends Application {
     primaryStage.setMinWidth(minWidth);
     primaryStage.setMinHeight(minHeight);
 
-    SplashScreen splashScreen = SplashScreen.create("Adventurer Game", sharedSize);
+    showSplashScreen();
+  }
+
+  private void showSplashScreen() {
+    SplashScreen splashScreen = SplashScreen.create(APP_NAME, sharedSize);
+
     primaryStage.setScene(splashScreen);
     primaryStage.show();
 
-    // Transition to the game scene after 3 seconds
-    PauseTransition delay = new PauseTransition(Duration.seconds(3));
-    delay.setOnFinished(event -> showPlayerSetup());
-    delay.play();
+    // Wait a bit before initiating transition
+    PauseTransition initialDelay = new PauseTransition(Duration.seconds(2));
+    initialDelay.setOnFinished(event -> {
+      // Creating next scene
+      PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize);
+      playerSetupScene.setOnStartGame(this::startGame);
+
+      // Cross dade transition to playerSetupScene
+      crossFadeTransition(primaryStage, playerSetupScene, Duration.seconds(0.5));
+    });
+    initialDelay.play();
   }
 
   private void showPlayerSetup() {
@@ -92,6 +107,5 @@ public class AdventurerGameApp extends Application {
     Platform.exit(); // Clean exit
     System.exit(0); // Even cleaner if background threads running or resources to free
   }
-
 
 }

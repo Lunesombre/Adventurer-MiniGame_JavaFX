@@ -5,7 +5,9 @@ import game.adventurer.config.AppConfig;
 import java.util.Objects;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import lombok.Getter;
 
+@Getter
 public abstract class BaseScene extends Scene {
 
   protected final SharedSize sharedSize;
