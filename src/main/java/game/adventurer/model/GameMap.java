@@ -6,9 +6,7 @@ import game.adventurer.model.base.Wound;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.model.enums.WoundCause;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -89,25 +87,8 @@ public class GameMap {
     return x < 0 || x >= mapWidth || y < 0 || y >= mapHeight;
   }
 
-  @Override
-  public String toString() {
-    return "GameMap{" +
-        "grid=" + (grid == null ? "null" : gridToString()) +
-        ", mapWidth=" + mapWidth +
-        ", mapHeight=" + mapHeight +
-        ", adventurer=" + adventurer +
-        ", treasure=" + treasure +
-        '}';
+  public Type getTileTypeAt(int x, int y) {
+    return grid[y][x].getType();
   }
 
-  private String gridToString() {
-    if (grid == null) {
-      return "null";
-    }
-    return Arrays.stream(grid)
-        .map(row -> row == null ? "null" : Arrays.stream(row)
-            .map(tile -> tile == null ? "null" : tile.toString())
-            .collect(Collectors.joining(", ", "[", "]")))
-        .collect(Collectors.joining(",\n ", "[\n ", "\n]"));
-  }
 }

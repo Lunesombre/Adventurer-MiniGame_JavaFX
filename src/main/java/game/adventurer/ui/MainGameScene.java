@@ -4,11 +4,16 @@ import static javafx.scene.paint.Color.rgb;
 
 import game.adventurer.common.SharedSize;
 import game.adventurer.controller.RightPanelController;
+import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Adventurer;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
+import game.adventurer.model.Tile.Type;
+import game.adventurer.model.Treasure;
+import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.util.PathfindingUtil;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -44,6 +49,8 @@ import org.slf4j.LoggerFactory;
 public class MainGameScene extends BaseScene {
 
   private static final int PADDING = 40;
+  public static final String TREASURE_IS_CLOSE = "Le trésor est proche !";
+  public static final String FAILED_INITIAL_DISTANCE = "Failed to calculate initial distance to treasure. This should never happen.";
   private static final double MESSAGE_BOX_MIN_WIDTH = 230.0;
   private static final double MESSAGE_BOX_MIN_HEIGHT = 250.0;
   public static final Logger LOG = LoggerFactory.getLogger(MainGameScene.class);
@@ -53,6 +60,11 @@ public class MainGameScene extends BaseScene {
   private VBox leftPanel;
   private VBox rightPanel;
   private final RightPanelController rightPanelController = new RightPanelController(PADDING, MESSAGE_BOX_MIN_WIDTH);
+  @Getter
+  private DifficultyLevel difficultyLevel;
+  @Getter
+  private int initialDistanceToTreasure;
+  private boolean hasSentMessage = false;
 
   private Circle adventurerCircle;
   private Circle treasureCircle;
@@ -74,19 +86,25 @@ public class MainGameScene extends BaseScene {
     super(root, sharedSize);
   }
 
-  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize) {
+  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize, DifficultyLevel difficultyLevel) throws InvalidGameStateException {
     BorderPane root = new BorderPane();
     MainGameScene scene = new MainGameScene(root, sharedSize);
     scene.gameMap = gameMap;
+    scene.difficultyLevel = difficultyLevel;
     scene.initialize();
     return scene;
   }
 
   @Override
-  protected void initialize() {
+  protected void initialize() throws InvalidGameStateException {
     initialHealth = gameMap.getAdventurer().getHealth();
     double windowWidth = sharedSize.getWidth();
     double windowHeight = sharedSize.getHeight();
+    initialDistanceToTreasure = calculateMovesToTreasure();
+    if (initialDistanceToTreasure == -1) {
+      LOG.error(FAILED_INITIAL_DISTANCE);
+      throw new InvalidGameStateException(FAILED_INITIAL_DISTANCE);
+    }
 
     BorderPane root = (BorderPane) getRoot();
     root.setPrefSize(windowWidth, windowHeight);
@@ -171,6 +189,9 @@ public class MainGameScene extends BaseScene {
             LOG.warn("onGameEnd is null");
           }
         } else {
+          if (!treasureCircle.isVisible()) {
+            updateTreasureVisibility();
+          }
           updateGameView();
         }
       }
@@ -272,6 +293,9 @@ public class MainGameScene extends BaseScene {
     treasureCircle = new Circle(tileSize / 2, Color.GOLD);
     treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize);
     treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize);
+    if (difficultyLevel != DifficultyLevel.EASY) {
+      treasureCircle.setVisible(false);
+    }
     mapView.getChildren().add(treasureCircle);
 
     // Adding adventurer
@@ -438,7 +462,11 @@ public class MainGameScene extends BaseScene {
     // Initialize the messages' controller
     rightPanelController.initMessagesBox(messagesBox);
     // Set the first message.
-    rightPanelController.addMessage("Bonne quête, " + gameMap.getAdventurer().getName());
+    String message = "Bonne quête, " + gameMap.getAdventurer().getName() + " !";
+    if (difficultyLevel != DifficultyLevel.EASY) {
+      message += "\n" + getTreasureHint(gameMap.getAdventurer(), gameMap.getTreasure());
+    }
+    rightPanelController.addMessage(message);
 
     VBox contactBox = new VBox(5);
     contactBox.setAlignment(Pos.BOTTOM_RIGHT);
@@ -507,6 +535,81 @@ public class MainGameScene extends BaseScene {
         playerHealth.setFill(Color.rgb(195, 0, 0)); // Red : <= 30%
       }
     });
+  }
+
+  private int calculateMovesToTreasure() {
+    return PathfindingUtil.shortestPath(
+        gameMap.getAdventurer().getTileX(), gameMap.getAdventurer().getTileY(),
+        gameMap.getTreasure().getTileX(), gameMap.getTreasure().getTileY(),
+        gameMap.getMapWidth(), gameMap.getMapHeight(),
+        (x, y) -> gameMap.getTileTypeAt(x, y) == Type.PATH
+    );
+  }
+
+  private void updateTreasureVisibility() {
+
+    switch (difficultyLevel) {
+      case DifficultyLevel.EASY -> treasureCircle.setVisible(true);
+      case DifficultyLevel.NORMAL -> {
+        int movesToTreasure = calculateMovesToTreasure();
+        if (movesToTreasure <= 3 && !hasSentMessage) {
+          rightPanelController.addMessage(TREASURE_IS_CLOSE);
+          hasSentMessage = true;
+        }
+        if (movesToTreasure > 3 && hasSentMessage) {
+          hasSentMessage = false;
+        }
+        treasureCircle.setVisible(movesToTreasure <= 2);
+      }
+      case DifficultyLevel.HARD -> {
+        int movesToTreasure = calculateMovesToTreasure();
+        if (movesToTreasure <= 2 && !hasSentMessage) {
+          rightPanelController.addMessage(TREASURE_IS_CLOSE);
+          hasSentMessage = true;
+        }
+        if (movesToTreasure > 2 && hasSentMessage) {
+          hasSentMessage = false;
+        }
+        treasureCircle.setVisible(movesToTreasure <= 1);
+      }
+      default -> treasureCircle.setVisible(false);
+    }
+  }
+
+  private String getTreasureHint(Adventurer adventurer, Treasure treasure) {
+    final String direction = getDirectionString(adventurer, treasure);
+    String distance = "";
+    if ((gameMap.getMapWidth() <= 11 && initialDistanceToTreasure >= 10)
+        || (gameMap.getMapWidth() > 11 && gameMap.getMapWidth() < 21 && initialDistanceToTreasure >= 20)
+        || (gameMap.getMapWidth() >= 21 && initialDistanceToTreasure >= 30)) {
+      distance = "loin ";
+    }
+    return String.format("Le trésor devrait être quelque part %svers %s.", distance, direction);
+  }
+
+  private static String getDirectionString(Adventurer adventurer, Treasure treasure) {
+    int dx = treasure.getTileX() - adventurer.getTileX();
+    int dy = treasure.getTileY() - adventurer.getTileY();
+    String direction = "";
+    if (dy > 0) {
+      direction += "le SUD";
+    } else if (dy < 0) {
+      direction += "le NORD";
+    }
+    if (dx > 0) {
+      if (!direction.isEmpty()) {
+        direction += "-EST";
+      } else {
+        direction += "l'EST";
+      }
+    } else if (dx < 0) {
+      if (!direction.isEmpty()) {
+        direction += "-OUEST";
+      } else {
+        direction += "l'OUEST";
+      }
+    }
+    return direction;
   }
 
 }

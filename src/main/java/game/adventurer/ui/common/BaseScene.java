@@ -2,6 +2,7 @@ package game.adventurer.ui.common;
 
 import game.adventurer.common.SharedSize;
 import game.adventurer.config.AppConfig;
+import game.adventurer.exceptions.InvalidGameStateException;
 import java.util.Objects;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -19,7 +20,7 @@ public abstract class BaseScene extends Scene {
     // don't put initialize() here if some variable are being instantiated in the initialize() of classes inheriting BaseScene.
   }
 
-  protected abstract void initialize();
+  protected abstract void initialize() throws InvalidGameStateException;
 
   protected void applyGlobalStyles() {
     String cssPath = AppConfig.getInstance().getGlobalStylePath();
