@@ -75,3 +75,38 @@
   -fx-background-color: transparent;
 }
 
+/* Styles for the alerts
+ */
+.alert {
+  -fx-background-color: rgb(64, 63, 63);
+  -fx-border-color: #c51222;
+  -fx-border-radius: 0 0 5px 5px;
+  -fx-border-width: 3px;
+}
+
+.alert > .header-panel {
+  -fx-background-color: rgb(174, 173, 173);
+}
+
+.alert > .header-panel > .label {
+  -fx-font-weight: bold;
+  -fx-text-fill: #c51222;
+  -fx-font-size: 20px;
+}
+
+.alert .content {
+  -fx-text-fill: #d8c601;
+}
+
+.alert .button {
+  -fx-background-color: #ca7840;
+  -fx-text-fill: #a39c95;
+  -fx-max-width: 100;
+  -fx-min-width: 100;
+}
+
+.alert .button:hover {
+  -fx-background-color: #ec8d4b;
+  -fx-text-fill: #dcd4cb;
+}
+

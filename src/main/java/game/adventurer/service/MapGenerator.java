@@ -6,10 +6,9 @@ import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
+import game.adventurer.util.PathfindingUtil;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.random.RandomGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,7 @@ public class MapGenerator {
   private MapGenerator() {
   }
 
-  public static final float MIN_WOOD_PERCENTAGE = 0.25f;
+  public static final float MIN_WOOD_PERCENTAGE = 0.3f;
   public static final float MAX_WOOD_PERCENTAGE = 0.5f;
   public static final float MIN_DISTANCE_FROM_ADVENTURER_PERCENTAGE = 0.25f;
   public static final Logger LOG = LoggerFactory.getLogger(MapGenerator.class);
@@ -93,46 +92,13 @@ public class MapGenerator {
   }
 
   private static boolean checkPath(GameMap gameMap, Adventurer adventurer, Treasure treasure) {
-    // Pathfinding algorithm: BFS (Breadth-First Search) or A* or even Dijkstra? => BFS looks easier
-    int width = gameMap.getMapWidth();
-    int height = gameMap.getMapHeight();
-    Tile[][] grid = gameMap.getGrid();
-
-    boolean[][] visited = new boolean[height][width];
-    Queue<int[]> queue = new LinkedList<>();
-    // Add starting position (adventurer) to queue
-    queue.offer(new int[]{adventurer.getTileY(), adventurer.getTileX()});
-    visited[adventurer.getTileY()][adventurer.getTileX()] = true;
-
-    // Define possible directions (up, right, down, left)
-    int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
-
-    while (!queue.isEmpty()) {
-      int[] current = queue.poll();
-      int y = current[0];
-      int x = current[1];
-
-      // If the treasure is reached, a path exists
-      if (y == treasure.getTileY() && x == treasure.getTileX()) {
-        return true;
-      }
-
-      // Verifies all directions
-      for (int[] dir : directions) {
-        int newY = y + dir[0];
-        int newX = x + dir[1];
-
-        // Check that the new position is valid and not visited
-        if (newY >= 0 && newY < height && newX >= 0 && newX < width
-            && !visited[newY][newX] && grid[newY][newX].getType() == Type.PATH) {
-          queue.offer(new int[]{newY, newX});
-          visited[newY][newX] = true;
-        }
-      }
-    }
-
-    // If we get here, no path was found.
-    return false;
+    // Pathfinding algorithm: BFS (Breadth-First Search)
+    return PathfindingUtil.hasPath(
+        adventurer.getTileX(), adventurer.getTileY(),
+        treasure.getTileX(), treasure.getTileY(),
+        gameMap.getMapWidth(), gameMap.getMapHeight(),
+        (x, y) -> gameMap.getTileTypeAt(x, y) == Type.PATH
+    );
   }
 
   private static List<int[]> calculatePossibleRanges(int adventurerPos, int minDistance, int maxBound) {
@@ -173,16 +139,6 @@ public class MapGenerator {
     for (int i = 0; i <= numberOfWoodAreas; i++) {
       int woodX = random.nextInt(width);
       int woodY = random.nextInt(height);
-      /*
-      Mécanisme pour faire des bois plus grands
-       */
-//      int woodSize = random.nextInt(3) + 2; // Taille entre 2 et 4
-//
-//      for (int tileY = woodY; tileY < Math.min(woodY + woodSize, height); tileY++) {
-//        for (int tileX = woodX; tileX < Math.min(woodX + woodSize, width); tileX++) {
-//          grid[tileY][tileX].setType(Tile.Type.WOOD);
-//        }
-//      }
       grid[woodY][woodX].setType(Tile.Type.WOOD);
     }
   }

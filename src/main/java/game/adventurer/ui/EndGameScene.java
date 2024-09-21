@@ -4,6 +4,7 @@ import game.adventurer.common.SharedSize;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.model.TreasureItem;
+import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.ui.common.BaseScene;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -28,16 +29,20 @@ public class EndGameScene extends BaseScene {
 
   private final GameMap gameMap;
   private final int movesCount;
+  private final DifficultyLevel difficultyLevel;
+  private final double initialDistanceToTreasure;
 
   public static final String RESTART_BUTTON_LABEL = "Rejouer";
   public static final String QUIT_BUTTON_LABEL = "Quitter jeu";
   private final Button quitButton = new Button(QUIT_BUTTON_LABEL);
   private final Button restartButton = new Button(RESTART_BUTTON_LABEL);
 
-  public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount) {
+  public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure) {
     super(new VBox(20), sharedSize);
     this.gameMap = gameMap;
     this.movesCount = movesCount;
+    this.difficultyLevel = difficultyLevel;
+    this.initialDistanceToTreasure = initialDistanceToTreasure;
 
     initialize();
   }
@@ -107,7 +112,16 @@ public class EndGameScene extends BaseScene {
     int terrainObstacleCount = countTerrainObstacles();
     double obstaclePercentage = (double) terrainObstacleCount / mapSize;
     int playerHealth = gameMap.getAdventurer().getHealth();
-    return (int) (1000 * (mapSize / 10 / (double) movesCount) * (1 + obstaclePercentage) * (playerHealth / 100.0));
+
+    double difficultyModifier;
+    switch (difficultyLevel) {
+      case DifficultyLevel.EASY -> difficultyModifier = 1.0;
+      case DifficultyLevel.HARD -> difficultyModifier = 2.0;
+      default -> difficultyModifier = 1.5;
+    }
+    double treasureDistance = initialDistanceToTreasure / 20;
+    return (int) (1000 * ((double) mapSize / 10 / movesCount) * (1 + obstaclePercentage) * (playerHealth / 100.0) * difficultyModifier
+        * treasureDistance);
   }
 
 
