@@ -68,17 +68,17 @@ public class AdventurerGameApp extends Application {
     PauseTransition initialDelay = new PauseTransition(Duration.seconds(2));
     initialDelay.setOnFinished(event -> {
       // Creating next scene
-      PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize);
+      PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager);
       playerSetupScene.setOnStartGame(this::startGame);
 
-      // Cross dade transition to playerSetupScene
+      // Cross-fade transition to playerSetupScene
       crossFadeTransition(primaryStage, playerSetupScene, Duration.seconds(1));
     });
     initialDelay.play();
   }
 
   private void showPlayerSetup() {
-    PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize);
+    PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager);
     playerSetupScene.setOnStartGame(this::startGame);
     primaryStage.setScene(playerSetupScene);
   }

@@ -36,8 +36,8 @@ public class SceneTransitionsManager {
     timeline.setOnFinished(event ->
             // remove the oldScene from the StackPane
             transitionScene.removeOldScene()
-        // Lots of trouble setting the stage to the new scene. Let's keep it that way
-        // as the oldScene has been removed, it should not cause problems.
+        // Lots of trouble setting the stage to the new scene.
+        // Let's keep it that way as the oldScene has been removed, it should not cause problems.
     );
 
     timeline.play();

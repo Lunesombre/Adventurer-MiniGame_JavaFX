@@ -158,6 +158,11 @@ public class MainGameScene extends BaseScene {
     setupResizeListeners();
   }
 
+  @Override
+  protected void onSizeChanged(double width, double height) {
+    // Determine if listeners need to be put here or not
+  }
+
   private void handleKeyPress(KeyEvent event) {
     MoveResult moveResult = MoveResult.BLOCKED;
     switch (event.getCode()) {
@@ -206,7 +211,10 @@ public class MainGameScene extends BaseScene {
           }
         }
       }
-      case OUT_OF_BOUNDS -> showOutOfBoundsEffect();
+      case OUT_OF_BOUNDS -> {
+        showOutOfBoundsEffect();
+        rightPanelController.addMessage("Vous ne pouvez pas quitter la carte sans le trésor !");
+      }
       case BLOCKED -> LOG.info("BLOCKED");
       // Do nothing for blocked moves
     }
@@ -520,7 +528,7 @@ public class MainGameScene extends BaseScene {
   }
 
   private void healthChangeListener(Text playerHealth) {
-    // Add aListener to check on health's changes.
+    // Add a Listener to check on health's changes.
     gameMap.getAdventurer().healthProperty().addListener((observable, oldValue, newValue) -> {
       int currentHealth = newValue.intValue();
       double healthPercentage = (double) currentHealth / initialHealth;

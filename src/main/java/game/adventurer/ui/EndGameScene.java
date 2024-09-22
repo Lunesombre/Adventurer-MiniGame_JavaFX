@@ -8,12 +8,14 @@ import game.adventurer.model.TreasureItem;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.ScoreBoard;
 import java.time.LocalDateTime;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -22,13 +24,16 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class EndGameScene extends BaseScene {
 
   private final GameMap gameMap;
@@ -43,10 +48,12 @@ public class EndGameScene extends BaseScene {
   @Getter
   private Score newScore;
   private final HighScoreManager highScoreManager;
+  private ScoreBoard scoreBoard;
+  private Text toggleScoreBoardText;
 
   public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure,
       HighScoreManager highScoreManager) {
-    super(new VBox(20), sharedSize);
+    super(new StackPane(), sharedSize);
     this.gameMap = gameMap;
     this.movesCount = movesCount;
     this.difficultyLevel = difficultyLevel;
@@ -59,8 +66,11 @@ public class EndGameScene extends BaseScene {
 
   @Override
   protected void initialize() {
-    VBox root = (VBox) getRoot();
+    StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
+
+    VBox mainContent = new VBox(20);
+    mainContent.setAlignment(Pos.CENTER);
 
     VBox scoreBox = new VBox(); // Define a VBox for the score info
     scoreBox.setAlignment(Pos.CENTER);
@@ -97,12 +107,47 @@ public class EndGameScene extends BaseScene {
     quitButton.getStyleClass().add("quit-button");
     buttonsBox.getChildren().addAll(restartButton, quitButton);
 
-    scoreBox.getChildren().addAll(congratsLabel, movesLabel, treasureFlow, scoreLabel, buttonsBox);
-    root.getChildren().addAll(scoreBox);
+    //ScoreBoard
+    scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
+    // scoreBoardText
+    toggleScoreBoardText = new Text("Afficher les meilleurs scores");
+    toggleScoreBoardText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
+    toggleScoreBoardText.setOnMouseClicked(this::toggleScoreBoard);
+    toggleScoreBoardText.setOnMouseEntered(e -> toggleScoreBoardText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
+    toggleScoreBoardText.setOnMouseExited(e -> toggleScoreBoardText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
 
-    // Adding listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
-    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
+    scoreBox.getChildren().addAll(congratsLabel, movesLabel, treasureFlow, scoreLabel, buttonsBox);
+    mainContent.getChildren().addAll(scoreBox, toggleScoreBoardText);
+    root.getChildren().addAll(mainContent, scoreBoard);
+    scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight()); // updateSize and position,
+    // done after the scoreBoard is added to root to prevent errors.
+    StackPane.setAlignment(scoreBoard, Pos.CENTER_RIGHT);
+    // Hide the ScoreBoard by clicking outside it
+    root.setOnMouseClicked(e -> {
+      if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
+        toggleScoreBoard(e);
+      }
+    });
+
+  }
+
+  @Override
+  protected void onSizeChanged(double width, double height) {
+    scoreBoard.updateSize(width, height);
+    scoreBoard.updateStyles(width);
+    scoreBoard.layout();
+    scoreBoard.requestLayout();
+  }
+
+  private void toggleScoreBoard(MouseEvent event) {
+    scoreBoard.setVisible(true);
+    scoreBoard.toggleDisplay();
+    if (scoreBoard.isShowing()) {
+      toggleScoreBoardText.setText("Masquer les meilleurs scores");
+    } else {
+      toggleScoreBoardText.setText("Afficher les meilleurs scores");
+    }
+    event.consume();
   }
 
   private TextFlow getTreasureFlow(TreasureItem treasureItem) {
@@ -151,7 +196,7 @@ public class EndGameScene extends BaseScene {
     int count = 0;
     for (int y = 0; y < gameMap.getMapHeight(); y++) {
       for (int x = 0; x < gameMap.getMapWidth(); x++) {
-        if (gameMap.getGrid()[y][x].getType() != Tile.Type.PATH) {
+        if (gameMap.getTileTypeAt(x, y) != Tile.Type.PATH) {
           count++;
         }
       }
