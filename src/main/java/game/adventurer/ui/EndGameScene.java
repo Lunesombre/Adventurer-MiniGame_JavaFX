@@ -2,10 +2,13 @@ package game.adventurer.ui;
 
 import game.adventurer.common.SharedSize;
 import game.adventurer.model.GameMap;
+import game.adventurer.model.Score;
 import game.adventurer.model.Tile;
 import game.adventurer.model.TreasureItem;
 import game.adventurer.model.enums.DifficultyLevel;
+import game.adventurer.service.HighScoreManager;
 import game.adventurer.ui.common.BaseScene;
+import java.time.LocalDateTime;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -24,6 +27,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
+import lombok.Getter;
 
 public class EndGameScene extends BaseScene {
 
@@ -36,13 +40,18 @@ public class EndGameScene extends BaseScene {
   public static final String QUIT_BUTTON_LABEL = "Quitter jeu";
   private final Button quitButton = new Button(QUIT_BUTTON_LABEL);
   private final Button restartButton = new Button(RESTART_BUTTON_LABEL);
+  @Getter
+  private Score newScore;
+  private final HighScoreManager highScoreManager;
 
-  public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure) {
+  public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure,
+      HighScoreManager highScoreManager) {
     super(new VBox(20), sharedSize);
     this.gameMap = gameMap;
     this.movesCount = movesCount;
     this.difficultyLevel = difficultyLevel;
     this.initialDistanceToTreasure = initialDistanceToTreasure;
+    this.highScoreManager = highScoreManager;
 
     initialize();
   }
@@ -67,6 +76,10 @@ public class EndGameScene extends BaseScene {
     ));
     scoreBox.setBackground(backgroundScoreBox);
 
+    int calculatedScore = calculateScore();
+    newScore = new Score(gameMap.getAdventurer().getName(), calculatedScore, LocalDateTime.now(), movesCount, difficultyLevel);
+    highScoreManager.addScore(newScore);
+
     Label congratsLabel = new Label("Félicitations " + gameMap.getAdventurer().getName() + " !");
     congratsLabel.setStyle("-fx-text-fill: gold; -fx-font-size: 40px; -fx-font-weight: bold;");
     congratsLabel.setPadding(new Insets(20.0));
@@ -76,7 +89,7 @@ public class EndGameScene extends BaseScene {
 
     TextFlow treasureFlow = getTreasureFlow(gameMap.getTreasure().getItem());
 
-    Label scoreLabel = new Label("Score : " + calculateScore());
+    Label scoreLabel = new Label("Score : " + calculatedScore);
     scoreLabel.setPadding(new Insets(20.0));
 
     HBox buttonsBox = new HBox(20);

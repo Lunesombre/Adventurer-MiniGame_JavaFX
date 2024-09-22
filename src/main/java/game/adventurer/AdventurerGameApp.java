@@ -9,6 +9,7 @@ import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
+import game.adventurer.service.HighScoreManager;
 import game.adventurer.service.MapGenerator;
 import game.adventurer.ui.EndGameScene;
 import game.adventurer.ui.GameOverScene;
@@ -25,17 +26,17 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class AdventurerGameApp extends Application {
 
 
   private SharedSize sharedSize;
   private Stage primaryStage;
   private static final float INITIAL_SCREEN_SIZE_RATIO = 0.8f;
-  public static final String APP_NAME = "Adventurer Game";
-  private static final Logger LOG = LoggerFactory.getLogger(AdventurerGameApp.class);
+  private static final String APP_NAME = "Adventurer Game";
+  private static final HighScoreManager highScoreManager = new HighScoreManager();
 
   @Override
   public void start(Stage primaryStage) {
@@ -90,16 +91,16 @@ public class AdventurerGameApp extends Application {
           mainGameScene.getInitialDistanceToTreasure()));
       mainGameScene.setOnGameOver(() -> showGameOver(gameMap));
       primaryStage.setScene(mainGameScene);
-      LOG.info("Starting game with player: {}, and map size: {}", playerName, mapSize);
+      log.info("Starting game with player: {}, and map size: {}", playerName, mapSize);
     } catch (NoValidRangeException e) {
-      LOG.error(e.getMessage(), e);
+      log.error(e.getMessage(), e);
     } catch (InvalidGameStateException e) {
       handleInvalidGameState(e);
     }
   }
 
   private void showEndGame(GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure) {
-    EndGameScene endGameScene = new EndGameScene(sharedSize, gameMap, movesCount, difficultyLevel, initialDistanceToTreasure);
+    EndGameScene endGameScene = new EndGameScene(sharedSize, gameMap, movesCount, difficultyLevel, initialDistanceToTreasure, highScoreManager);
     endGameScene.setOnRestartGame(this::showPlayerSetup);
     endGameScene.setOnQuitGame(this::quitGame);
     primaryStage.setScene(endGameScene);
