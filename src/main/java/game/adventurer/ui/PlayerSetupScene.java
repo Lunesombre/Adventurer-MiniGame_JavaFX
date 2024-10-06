@@ -123,7 +123,7 @@ public class PlayerSetupScene extends BaseScene {
     mediumMode.setStyle(radioStyles);
     RadioButton hardMode = new RadioButton("Hard");
     hardMode.setStyle(radioStyles);
-    Tooltip easyModeTooltip = new Tooltip("Position du trésor connue dès le départ.");
+    Tooltip easyModeTooltip = new Tooltip("Position du trésor connue dès le départ, marquée d'une croix rouge.");
     Tooltip normalModeTooltip = new Tooltip("Direction générale du trésor donnée, vous le verrez à proximité.");
     Tooltip hardModeTooltip = new Tooltip("Direction générale du trésor donnée, il sera plus dur à trouver");
     easyMode.setTooltip(easyModeTooltip);
