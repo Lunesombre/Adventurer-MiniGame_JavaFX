@@ -38,6 +38,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
@@ -67,7 +68,7 @@ public class MainGameScene extends BaseScene {
   private boolean hasSentMessage = false;
 
   private Circle adventurerCircle;
-  private Circle treasureCircle;
+  private Group treasureCross;
   private double tileSize;
   private double xOffset;
   private double yOffset;
@@ -194,7 +195,7 @@ public class MainGameScene extends BaseScene {
             LOG.warn("onGameEnd is null");
           }
         } else {
-          if (!treasureCircle.isVisible()) {
+          if (!treasureCross.isVisible()) {
             updateTreasureVisibility();
           }
           updateGameView();
@@ -243,9 +244,32 @@ public class MainGameScene extends BaseScene {
     adventurerCircle.setRadius(tileSize / 2);
 
     // Update size and position of treasure
-    treasureCircle.setRadius(tileSize / 2);
-    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize);
-    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize);
+    double crossSize = tileSize / 2;
+    double centerX = xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize;
+    double centerY = yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize;
+
+    Line line1 = (Line) treasureCross.getChildren().get(0);
+    Line line2 = (Line) treasureCross.getChildren().get(1);
+
+    // Calculate coordinates for the cross' lines
+    double halfSize = crossSize / 2;
+    line1.setStartX(-halfSize);
+    line1.setStartY(-halfSize);
+    line1.setEndX(halfSize);
+    line1.setEndY(halfSize);
+
+    line2.setStartX(-halfSize);
+    line2.setStartY(halfSize);
+    line2.setEndX(halfSize);
+    line2.setEndY(-halfSize);
+
+    // Positions the Group
+    treasureCross.setLayoutX(centerX);
+    treasureCross.setLayoutY(centerY);
+
+    // Set Lines stroke
+    line1.setStrokeWidth(tileSize / 20);
+    line2.setStrokeWidth(tileSize / 20);
 
     LOG.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
         gameMap.getAdventurer().getTileX(),
@@ -298,13 +322,24 @@ public class MainGameScene extends BaseScene {
     }
 
     // Adding treasure
-    treasureCircle = new Circle(tileSize / 2, Color.GOLD);
-    treasureCircle.setCenterX(xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize);
-    treasureCircle.setCenterY(yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize);
+    treasureCross = new Group();
+    double xCenter = xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize;
+    double yCenter = yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize;
+    double halfSize = tileSize / 4; // handles size of the "X"
+
+    Line line1 = new Line(xCenter - halfSize, yCenter - halfSize, xCenter + halfSize, yCenter + halfSize);
+    Line line2 = new Line(xCenter - halfSize, yCenter + halfSize, xCenter + halfSize, yCenter - halfSize);
+    line1.setStroke(Color.DARKRED);
+    line1.setStrokeWidth(3);
+    line2.setStroke(Color.DARKRED);
+    line2.setStrokeWidth(3);
+
+    treasureCross.getChildren().addAll(line1, line2);
+
     if (difficultyLevel != DifficultyLevel.EASY) {
-      treasureCircle.setVisible(false);
+      treasureCross.setVisible(false);
     }
-    mapView.getChildren().add(treasureCircle);
+    mapView.getChildren().add(treasureCross);
 
     // Adding adventurer
     adventurerCircle = new Circle(tileSize / 2, Color.BLUE);
@@ -557,7 +592,7 @@ public class MainGameScene extends BaseScene {
   private void updateTreasureVisibility() {
 
     switch (difficultyLevel) {
-      case DifficultyLevel.EASY -> treasureCircle.setVisible(true);
+      case DifficultyLevel.EASY -> treasureCross.setVisible(true);
       case DifficultyLevel.NORMAL -> {
         int movesToTreasure = calculateMovesToTreasure();
         if (movesToTreasure <= 3 && !hasSentMessage) {
@@ -567,7 +602,7 @@ public class MainGameScene extends BaseScene {
         if (movesToTreasure > 3 && hasSentMessage) {
           hasSentMessage = false;
         }
-        treasureCircle.setVisible(movesToTreasure <= 2);
+        treasureCross.setVisible(movesToTreasure <= 2);
       }
       case DifficultyLevel.HARD -> {
         int movesToTreasure = calculateMovesToTreasure();
@@ -578,9 +613,9 @@ public class MainGameScene extends BaseScene {
         if (movesToTreasure > 2 && hasSentMessage) {
           hasSentMessage = false;
         }
-        treasureCircle.setVisible(movesToTreasure <= 1);
+        treasureCross.setVisible(movesToTreasure <= 1);
       }
-      default -> treasureCircle.setVisible(false);
+      default -> treasureCross.setVisible(false);
     }
   }
 
