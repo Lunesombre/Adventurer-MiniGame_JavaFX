@@ -3,6 +3,7 @@ package game.adventurer.ui.common;
 import game.adventurer.common.SharedSize;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
+import lombok.Getter;
 
 /**
  * Represents a transition scene that blends two BaseScene instances for smooth visual transitions. This class extends BaseScene and uses a StackPane
@@ -13,6 +14,7 @@ import javafx.scene.layout.StackPane;
 public class TransitionScene<T extends BaseScene> extends BaseScene {
 
   private final T oldScene;
+  @Getter
   private final T newScene;
 
   /**
@@ -41,6 +43,12 @@ public class TransitionScene<T extends BaseScene> extends BaseScene {
     // Ensure both scenes take all available space
     StackPane.setAlignment(oldScene.getRoot(), Pos.CENTER);
     StackPane.setAlignment(newScene.getRoot(), Pos.CENTER);
+  }
+
+  @Override
+  protected void onSizeChanged(double width, double height) {
+    oldScene.updateSize();
+    newScene.updateSize();
   }
 
   /**

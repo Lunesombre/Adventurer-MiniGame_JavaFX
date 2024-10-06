@@ -3,11 +3,16 @@ package game.adventurer.ui;
 import game.adventurer.common.SharedSize;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
+import game.adventurer.service.HighScoreManager;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.ScoreBoard;
+import game.adventurer.ui.common.TransitionScene;
 import game.adventurer.util.TriConsumer;
 import java.util.Arrays;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -15,13 +20,18 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PlayerSetupScene extends BaseScene {
 
   private TextField adventurerNameField;
@@ -33,20 +43,26 @@ public class PlayerSetupScene extends BaseScene {
   private MapSize selectedMapSize;
   private DifficultyLevel selectedDifficultyLevel;
 
+  private final HighScoreManager highScoreManager;
+  private ScoreBoard scoreBoard;
+  private Text toggleText;
 
-  public PlayerSetupScene(SharedSize sharedSize) {
-    super(new VBox(), sharedSize);
+
+  public PlayerSetupScene(SharedSize sharedSize, HighScoreManager highScoreManager) {
+    super(new StackPane(), sharedSize);
+    this.highScoreManager = highScoreManager;
     initialize();
   }
 
   @Override
   protected void initialize() {
     Label errorLabel;
-    VBox root = (VBox) getRoot();
+    StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
-    root.setSpacing(20);
     root.setPadding(new Insets(20));
     root.setStyle("-fx-background-color: #403f3f;");
+    VBox mainContent = new VBox(20);
+    mainContent.setAlignment(Pos.CENTER);
 
     Label titleLabel = new Label("Adventurer Setup");
     titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #46a7b3;");
@@ -131,12 +147,30 @@ public class PlayerSetupScene extends BaseScene {
 
     startButton = new Button("Start Adventure");
 
-    root.getChildren()
-        .addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, difficultyModeLabel, difficultyModeBox, startButton);
+    //ScoreBoard
+    scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
+    // scoreBoardText
+    toggleText = new Text("Afficher les meilleurs scores");
+    toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
+    toggleText.setOnMouseClicked(this::toggleScoreBoard);
+    toggleText.setOnMouseEntered(e -> toggleText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
+    toggleText.setOnMouseExited(e -> toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
 
-    // Adding listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
-    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
+    mainContent.getChildren()
+        .addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, difficultyModeLabel, difficultyModeBox, startButton,
+            toggleText);
+    root.getChildren().addAll(mainContent, scoreBoard);
+    scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight());
+    StackPane.setAlignment(scoreBoard, Pos.CENTER_RIGHT);
+    // Hide the ScoreBoard by clicking outside it
+    root.setOnMouseClicked(e -> {
+      if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
+        scoreBoard.toggleDisplay();
+        toggleText.setText(scoreBoard.isShowing() ? "Masquer les meilleurs scores" : "Afficher les meilleurs scores");
+      }
+
+    });
+
     // Listener for Adventurer's cause validation
     adventurerNameField.textProperty().addListener((observable, oldValue, newValue) -> {
       boolean isValid = isValidAdventurerName(newValue);
@@ -152,6 +186,31 @@ public class PlayerSetupScene extends BaseScene {
         errorLabel.setVisible(false);
       }
     });
+
+
+  }
+
+  @Override
+  protected void onSizeChanged(double width, double height) {
+
+    //If PlayerSetupScene is within a TransitionScene, then use sharedSize from TransitionScene
+    Parent root = getRoot();
+    Scene scene = root.getScene();
+    double newWidth = width;
+    double newHeight = height;
+    if (scene instanceof TransitionScene<?> transitionScene) {
+      newWidth = transitionScene.getWidth();
+      newHeight = transitionScene.getHeight();
+      // These next two lines give the PlayerSetupScene the correct size and not the one it had when it was created,
+      // it solves the problem of creating the mainGameScene with initial size
+      this.sharedSize.setHeight(newHeight);
+      this.sharedSize.setWidth(newWidth);
+    }
+
+    scoreBoard.updateSize(newWidth, newHeight);
+    scoreBoard.updateStyles(newWidth);
+    scoreBoard.layout();
+    scoreBoard.requestLayout();
   }
 
 
@@ -217,6 +276,17 @@ public class PlayerSetupScene extends BaseScene {
       return "Name can only contain letters, numbers, spaces, and hyphens.";
     }
     return ""; // No errors
+  }
+
+  private void toggleScoreBoard(MouseEvent event) {
+    scoreBoard.setVisible(true);
+    scoreBoard.toggleDisplay();
+    if (scoreBoard.isShowing()) {
+      toggleText.setText("Masquer les meilleurs scores");
+    } else {
+      toggleText.setText("Afficher les meilleurs scores");
+    }
+    event.consume();
   }
 
 }

@@ -7,7 +7,9 @@ import java.util.Objects;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Getter
 public abstract class BaseScene extends Scene {
 
@@ -18,6 +20,9 @@ public abstract class BaseScene extends Scene {
     this.sharedSize = sharedSize;
     applyGlobalStyles();
     // don't put initialize() here if some variable are being instantiated in the initialize() of classes inheriting BaseScene.
+
+    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
+    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
   }
 
   protected abstract void initialize() throws InvalidGameStateException;
@@ -31,6 +36,8 @@ public abstract class BaseScene extends Scene {
   protected void updateSize() {
     sharedSize.setWidth(getWidth());
     sharedSize.setHeight(getHeight());
+    onSizeChanged(getWidth(), getHeight());
   }
 
+  protected abstract void onSizeChanged(double width, double height);
 }

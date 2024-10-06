@@ -110,3 +110,120 @@
   -fx-text-fill: #dcd4cb;
 }
 
+/*
+Styles for ScoreBoard
+ */
+.scoreBoardTitle {
+  -fx-font-family: 'Medieval Scroll of Wisdom';
+  -fx-font-size: 30px;
+  -fx-text-fill: #ffc400;
+  -fx-background-color: rgb(64, 63, 63);
+  -fx-background-radius: 15px;
+  -fx-alignment: center;
+  -fx-padding: 10px 40px;
+  -fx-translate-y: -10
+}
+
+.podium {
+  -fx-fill-width: true;
+  -fx-text-alignment: center;
+  -fx-padding: 35 10 10 10;
+}
+
+.podium-item {
+  -fx-background-color: rgba(255, 255, 255, 0.7);
+  -fx-padding: 10;
+  -fx-background-radius: 15;
+  -fx-min-width: 200;
+}
+
+.first {
+  -fx-translate-y: -30;
+}
+
+.other-scores {
+  -fx-padding: 20 0 0 0;
+  -fx-start-margin: 10;
+  -fx-alignment: center;
+  -fx-max-width: 850px;
+}
+
+.score-line {
+  -fx-text-alignment: justify;
+  -fx-alignment: center-left;
+  -fx-padding: 5 20;
+  -fx-background-color: grey;
+  -fx-background-radius: 10;
+  -fx-max-width: 800px;
+  -fx-min-width: 600px;
+}
+
+.score-rank {
+  -fx-min-width: 30;
+  -fx-max-width: 30;
+  -fx-alignment: center-left;
+}
+
+.score-line-name {
+  -fx-min-width: 220;
+  -fx-max-width: 220;
+  -fx-font-weight: bold;
+}
+
+.score-line-name-small {
+  -fx-min-width: 180;
+  -fx-max-width: 180;
+  -fx-font-weight: bold;
+  -fx-font-size: 16;
+}
+
+.score-line-element {
+  -fx-min-width: 130;
+  -fx-max-width: 210;
+  -fx-alignment: center;
+  -fx-content-display: center;
+}
+
+.score-line-element-small {
+  -fx-min-width: 100;
+  -fx-pref-width: 130;
+  -fx-max-width: 210;
+  -fx-alignment: center;
+  -fx-font-size: 16;
+  -fx-content-display: center;
+}
+
+.centering-pane {
+  -fx-alignment: center;
+}
+
+.firstScore {
+  -fx-font-weight: bold;
+  /*-fx-text-fill: #ff9900;*/ /* when it's a Label*/
+  -fx-fill: #ff9900; /* when it's a Text */
+  -fx-stroke: #494646;
+}
+
+.second {
+  -fx-font-weight: bold;
+  /*-fx-text-fill: #8e8e8d;*/
+  -fx-fill: #8e8e8d;
+  -fx-stroke: #494646;
+
+}
+
+.third {
+  -fx-font-weight: bold;
+  /*-fx-text-fill: #6a483c;*/
+  -fx-fill: #6a483c;
+  -fx-stroke: #494646;
+
+}
+
+.score-value {
+  -fx-fill: #ea204d;
+  -fx-font-weight: bold;
+  -fx-stroke: #322929;
+}
+
+

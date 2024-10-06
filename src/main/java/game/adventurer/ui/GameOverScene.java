@@ -96,11 +96,11 @@ public class GameOverScene extends BaseScene {
     // Background style
     root.setStyle("-fx-background-color: #2C3E50;");
 
-    // Adding listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
-    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
+  }
 
-
+  @Override
+  protected void onSizeChanged(double width, double height) {
+    // method empty as no specific thing to do on the scene's size changes.
   }
 
   public void setOnReplayGame(Runnable action) {

@@ -72,10 +72,11 @@ public class SplashScreen extends BaseScene {
     nameLabel.fontProperty().bind(Bindings.createObjectBinding(() ->
         loadCustomFont(getHeight()), heightProperty()
     ));
+  }
 
-    // Adding listeners for resizing
-    widthProperty().addListener((obs, oldVal, newVal) -> updateSize());
-    heightProperty().addListener((obs, oldVal, newVal) -> updateSize());
+  @Override
+  protected void onSizeChanged(double width, double height) {
+    // nothing to add here for now
   }
 
   private Font loadCustomFont(double initialSize) {
