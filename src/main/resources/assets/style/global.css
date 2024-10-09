@@ -127,13 +127,18 @@ Styles for buttons
 .alert .button {
   -fx-background-color: #ca7840;
   -fx-text-fill: #a39c95;
-  -fx-max-width: 100;
-  -fx-min-width: 100;
+  -fx-max-width: 80;
+  -fx-min-width: 80;
+  -fx-font-size: 20px;
+  -fx-font-weight: normal;
+  -fx-background-radius: 11px;
+  -fx-border-radius: 10px;
+  -fx-border-width: 1px;
 }
 
 .alert .button:hover {
   -fx-background-color: #ec8d4b;
-  -fx-text-fill: #dcd4cb;
+  -fx-text-fill: #f3efeb;
 }
 
 .reset-high-scores-alert {
@@ -164,7 +169,6 @@ Styles for buttons
   -fx-background-radius: 11px;
   -fx-border-radius: 10px;
   -fx-border-width: 1px;
-  -fx-background-insets: 0;
 }
 
 .reset-high-scores-alert .reset-confirm-button {
@@ -187,6 +191,58 @@ Styles for buttons
   -fx-text-fill: black;
 }
 
+.keybinding-alert {
+  -fx-background-color: rgb(174, 173, 173);
+  -fx-border-width: 0;
+}
+
+.keybinding-alert > .header-panel {
+  -fx-background-color: rgb(174, 173, 173);
+}
+
+.keybinding-alert > .header-panel > .label {
+  -fx-font-weight: bold;
+  -fx-text-fill: #100f0f;
+  -fx-font-size: 20px;
+}
+
+.keybinding-alert > .content > .text-field {
+  -fx-pref-width: 200px;
+  -fx-background-color: rgb(140, 139, 139);
+  -fx-text-alignment: center;
+}
+
+
+.keybinding-alert .button {
+  -fx-text-fill: bisque;
+  -fx-background-color: #1a8fe3;
+  -fx-max-width: 130;
+  -fx-min-width: 130;
+  -fx-font-size: 20px;
+  -fx-background-radius: 11px;
+  -fx-border-radius: 10px;
+  -fx-border-width: 1px;
+}
+
+.keybinding-alert .confirm-button {
+  -fx-background-color: #2e8300;
+}
+
+.keybinding-alert .cancel-button {
+  -fx-background-color: #830000;
+}
+
+.keybinding-alert .cancel-button:hover {
+  -fx-background-color: #fa2626;
+}
+
+.keybinding-alert .confirm-button:hover {
+  -fx-background-color: #3fb300;
+}
+
+.keybinding-prompt {
+  -fx-background-color: rgb(174, 173, 173);
+}
 
 /*
 Styles for ScoreBoard
@@ -345,6 +401,16 @@ Options styles
 
 .option-titled-pane > .title > .arrow-button {
   -fx-background-color: transparent; /* Make the hidden arrow button transparent */
+}
+
+.option-line {
+  -fx-background-color: #676767;
+  -fx-text-fill: #323232;
+  -fx-fill: #323232;
+  -fx-padding: 5px 0 5px 10px;
+  -fx-font-size: 16px;
+  -fx-border-style: hidden hidden solid hidden;
+  -fx-border-color: rgba(50, 50, 50, 0.8);
 }
 
 

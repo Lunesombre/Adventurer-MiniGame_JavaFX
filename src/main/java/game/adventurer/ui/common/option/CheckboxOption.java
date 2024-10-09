@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 
-public class CheckboxOption implements Option {
+public class CheckboxOption implements Option<Boolean> {
 
   private final String name;
   private final CheckBox checkBox;
@@ -27,7 +27,7 @@ public class CheckboxOption implements Option {
   }
 
   @Override
-  public void onValueChange(Consumer<Object> listener) {
+  public void onValueChange(Consumer<Boolean> listener) {
     checkBox.selectedProperty().addListener((obs, oldVal, newVal) -> listener.accept(newVal));
   }
 }

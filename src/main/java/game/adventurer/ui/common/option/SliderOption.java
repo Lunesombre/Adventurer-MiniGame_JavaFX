@@ -4,7 +4,7 @@ import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.Slider;
 
-public class SliderOption implements Option {
+public class SliderOption implements Option<Number> {
 
   private final String name;
   private final Slider slider;
@@ -25,7 +25,7 @@ public class SliderOption implements Option {
   }
 
   @Override
-  public void onValueChange(Consumer<Object> listener) {
+  public void onValueChange(Consumer<Number> listener) {
     slider.valueProperty().addListener((obs, oldVal, newVal) -> listener.accept(newVal));
   }
 }

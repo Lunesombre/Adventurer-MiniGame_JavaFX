@@ -1,25 +1,23 @@
 package game.adventurer.ui.common.option;
 
-import game.adventurer.config.AppConfig;
+import static game.adventurer.util.MiscUtil.alertInitializer;
+
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.ui.common.ScoreBoard;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ScoreBoardOption implements Option {
+public class ScoreBoardOption implements Option<Void> {
 
   @Getter
   private final String name;
@@ -33,9 +31,9 @@ public class ScoreBoardOption implements Option {
 
   public ScoreBoardOption(String name, ScoreBoard scoreBoard, HighScoreManager highScoreManager) {
     this.name = name;
-    this.scoreBoard = scoreBoard;
     this.titledPane = new TitledPane();
     this.content = new VBox(10);
+    this.scoreBoard = scoreBoard;
     this.highScoreManager = highScoreManager;
     setupLayout();
   }
@@ -65,25 +63,14 @@ public class ScoreBoardOption implements Option {
   }
 
   private void showResetConfirmation() {
-    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle("Réinitialiser les High Scores");
-    alert.setHeaderText("Êtes-vous sûr de vouloir réinitialiser les high scores ?");
+    // Initialize the alert
+    Alert alert = alertInitializer(getClass(), AlertType.CONFIRMATION, "Réinitialiser les High Scores",
+        "Êtes-vous sûr de vouloir réinitialiser les high scores ?", "reset-high-scores-alert", "/assets/icons/warning.png", true);
+
+    // Defines alert content (buttons are created by the AlertType.CONFIRMATION)
     alert.setContentText("Cette action est irréversible !");
 
-    // Stylize the alert
-    String cssPath = AppConfig.getInstance().getGlobalStylePath();
-    alert.getDialogPane().getStylesheets().add(Objects.requireNonNull(getClass().getResource(cssPath)).toExternalForm());
-    alert.getDialogPane().getStyleClass().add("reset-high-scores-alert");
-
-    Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icons/warning.png")));
-    ImageView iconView = new ImageView(icon);
-    iconView.setPreserveRatio(true);
-    iconView.setFitWidth(80);
-    alert.getDialogPane().setGraphic(iconView);
-    Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-    stage.getIcons().add(icon);
-
-    // Buttons
+    // Buttons text and styles
     alert.getButtonTypes().forEach(buttonType -> {
       Button button = (Button) alert.getDialogPane().lookupButton(buttonType);
       if (buttonType == ButtonType.OK) {
@@ -109,8 +96,8 @@ public class ScoreBoardOption implements Option {
   }
 
   @Override
-  public void onValueChange(Consumer<Object> listener) {
-    // Nothing to do here
+  public void onValueChange(Consumer<Void> listener) {
+    // Nothing to do here as this option has no value to change
   }
 
   public void adjustContentLabelsFontSize(double width) {

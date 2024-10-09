@@ -1,9 +1,9 @@
 package game.adventurer;
 
 import static game.adventurer.ui.common.SceneTransitionsManager.crossFadeTransition;
+import static game.adventurer.util.MiscUtil.alertInitializer;
 
 import game.adventurer.common.SharedSize;
-import game.adventurer.config.AppConfig;
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.GameMap;
@@ -17,13 +17,12 @@ import game.adventurer.ui.MainGameScene;
 import game.adventurer.ui.PlayerSetupScene;
 import game.adventurer.ui.SplashScreen;
 import game.adventurer.util.ScreenUtils;
-import java.util.Objects;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
@@ -120,17 +119,13 @@ public class AdventurerGameApp extends Application {
 
   private void handleInvalidGameState(InvalidGameStateException e) {
     Platform.runLater(() -> {
-      Alert alert = new Alert(Alert.AlertType.ERROR);
-      alert.setTitle("Critical Error");
-      alert.setHeaderText("Error: " + e.getMessage());
+      // Initialize the alert
+      Alert alert = alertInitializer(getClass(), AlertType.ERROR, "Critical Error", "Error: " + e.getMessage(), "alert",
+          "/assets/icons/crane-et-os.png", true);
+
+      // Defines alert content (OK button is created by the AlertType.ERROR)
       alert.setContentText("The game cannot continue due to an invalid state. Game will close upon closing this alert.");
-      String cssPath = AppConfig.getInstance().getGlobalStylePath();
-      alert.getDialogPane().getStylesheets().add(Objects.requireNonNull(getClass().getResource(cssPath)).toExternalForm());
-      alert.getDialogPane().getStyleClass().add("alert");
-      Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icons/crane-et-os.png")));
-      alert.getDialogPane().setGraphic(new ImageView(icon));
-      Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
-      stage.getIcons().add(icon);
+
       alert.showAndWait();
       quitGame();
     });
