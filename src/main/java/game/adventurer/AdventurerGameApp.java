@@ -36,7 +36,7 @@ public class AdventurerGameApp extends Application {
   private Stage primaryStage;
   private static final float INITIAL_SCREEN_SIZE_RATIO = 0.8f;
   private static final String APP_NAME = "Adventurer Game";
-  private static final HighScoreManager highScoreManager = new HighScoreManager();
+  public static final HighScoreManager highScoreManager = new HighScoreManager();
 
   @Override
   public void start(Stage primaryStage) {

@@ -13,6 +13,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -26,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ScoreBoard extends VBox {
-
 
   @Getter
   private boolean isShowing = false;
@@ -45,7 +45,7 @@ public class ScoreBoard extends VBox {
     List<Score> highScores = highScoreManager.getTopScores(10);
     // ScoreBoard title
     Label highScoreLabel = new Label("HighScores");
-    highScoreLabel.getStyleClass().add("scoreBoardTitle");
+    highScoreLabel.getStyleClass().add("scoreboard-title");
     HBox title = new HBox(highScoreLabel);
     title.setAlignment(Pos.CENTER);
 
@@ -137,8 +137,7 @@ public class ScoreBoard extends VBox {
     centeringPane.getChildren().add(otherHighScores);
     this.getChildren().addAll(title, podium, centeringPane);
 
-    this.setStyle(
-        "-fx-background-color: rgba(250,200,80,0.9); -fx-padding:20; -fx-text-fill: #404040; -fx-border-color: gold; -fx-border-width: 3px; -fx-border-radius: 15px; -fx-background-radius: 15px");
+    getStyleClass().add("scoreboard");
 
     // Initializing animations
     slideIn = new TranslateTransition(Duration.seconds(0.8), this);
@@ -161,10 +160,19 @@ public class ScoreBoard extends VBox {
     // Adjust the ScoreBoard dimensions
     double parentWidth = getParent().getLayoutBounds().getWidth();
     double parentHeight = getParent().getLayoutBounds().getHeight();
+    log.debug("parentWidth: {}", parentWidth);
+    log.debug("this.getWidth: {}", getWidth());
     updateSize(parentWidth, parentHeight);
     updateStyles(parentWidth);
+    log.debug("this.getWidth after updateSize: {}", getWidth());
     double targetX = (parentWidth - getWidth()) / 2;
-    slideIn.setToX(0 - targetX);
+    log.debug("targetX : {}", targetX);
+    if (getParent() instanceof BorderPane borderPane) {
+      slideIn.setToX(targetX);
+      setTranslateY((borderPane.getHeight() - getHeight()) / 2);
+    } else {
+      slideIn.setToX(0 - targetX);
+    }
     slideIn.play();
     isShowing = true;
   }
@@ -182,20 +190,29 @@ public class ScoreBoard extends VBox {
     // New size calculation
     double newWidth = Math.min(width * 0.7, 1000);
     double newHeight = Math.min(height, 800);
-    setMaxWidth(newWidth);
-    setMaxHeight(newHeight);
-    setPrefWidth(newWidth);
-    setPrefHeight(newHeight);
+    setMaxSize(newWidth, newHeight);
+    setPrefSize(newWidth, newHeight);
+    setMinSize(newWidth, newHeight);
+    // Strange fix for when it's used from ScoreBoardOption in a BorderPane, I don't know why it works
+    // and why it doesn't break things
+    setWidth(newWidth);
+    setHeight(newHeight);
+
     // Centers horizontally
     double layoutX = (width - newWidth) / 2;
 
     if (isShowing) {
-      setTranslateX(0 - layoutX); // correctly keeps it horizontally centered
+      if (getParent() instanceof BorderPane borderPane) {
+        setTranslateX(layoutX); // centers horizontally
+        setTranslateY((borderPane.getHeight() - getHeight()) / 2); // centers vertically
+      } else {
+        setTranslateX(0 - layoutX); // correctly keeps it horizontally centered
+      }
     }
     if (height < 820) {
-      otherHighScores.setSpacing(12);
+      otherHighScores.setSpacing(14);
       if (height < 750) {
-        otherHighScores.setSpacing(5);
+        otherHighScores.setSpacing(8);
       }
     } else {
       otherHighScores.setSpacing(20);
@@ -246,4 +263,54 @@ public class ScoreBoard extends VBox {
     }
   }
 
+  public void updateScores(List<Score> newScoresList) {
+    // Podium update
+    updatePodiumScore(newScoresList.get(0), 0);
+    updatePodiumScore(newScoresList.get(1), 1);
+    updatePodiumScore(newScoresList.get(2), 2);
+
+    // Other top 10 scores update
+    for (int i = 3; i < Math.min(newScoresList.size(), 10); i++) {
+      updateOtherScore(newScoresList.get(i), i);
+    }
+  }
+
+  private void updatePodiumScore(Score score, int position) {
+    int place;
+    switch (position) {
+      case 0 -> place = 1;
+      case 1 -> place = 0;
+      default -> place = 2;
+    }
+    VBox podiumItem = (VBox) ((HBox) getChildren().get(1)).getChildren().get(place);
+
+    Label nameLabel = (Label) podiumItem.getChildren().get(1);
+    nameLabel.setText(score.getAdventurerName());
+
+    Text scoreText = (Text) podiumItem.getChildren().get(2);
+    scoreText.setText(score.getScoreValue() + " points");
+
+    Label dateLabel = (Label) podiumItem.getChildren().get(3);
+    dateLabel.setText(getFormattedStringFromLocalDateTime(score.getDate()));
+
+    Label difficultyLabel = (Label) podiumItem.getChildren().get(4);
+    difficultyLabel.setText("mode " + score.getDifficultyLevel().toString());
+  }
+
+  private void updateOtherScore(Score score, int position) {
+    HBox scoreBox = (HBox) otherHighScores.getChildren().get(position - 3);
+
+    Label nameLabel = (Label) scoreBox.getChildren().get(1);
+    nameLabel.setText(score.getAdventurerName());
+
+    HBox scoreValueBox = (HBox) ((Label) scoreBox.getChildren().get(2)).getGraphic();
+    Text scoreValueText = (Text) scoreValueBox.getChildren().getFirst();
+    scoreValueText.setText(String.valueOf(score.getScoreValue()));
+
+    Label dateLabel = (Label) scoreBox.getChildren().get(3);
+    dateLabel.setText(getFormattedStringFromLocalDateTime(score.getDate()));
+
+    Label difficultyLabel = (Label) scoreBox.getChildren().get(4);
+    difficultyLabel.setText("mode " + score.getDifficultyLevel().toString());
+  }
 }

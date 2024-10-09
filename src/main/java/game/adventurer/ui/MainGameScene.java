@@ -1,5 +1,6 @@
 package game.adventurer.ui;
 
+import static game.adventurer.AdventurerGameApp.highScoreManager;
 import static javafx.scene.paint.Color.rgb;
 
 import game.adventurer.common.SharedSize;
@@ -13,6 +14,10 @@ import game.adventurer.model.Treasure;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.OptionsPanel;
+import game.adventurer.ui.common.ScoreBoard;
+import game.adventurer.ui.common.option.CheckboxOption;
+import game.adventurer.ui.common.option.ScoreBoardOption;
 import game.adventurer.util.PathfindingUtil;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
@@ -23,7 +28,9 @@ import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BackgroundImage;
@@ -35,6 +42,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -44,17 +52,17 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class MainGameScene extends BaseScene {
 
   private static final int PADDING = 40;
   public static final String TREASURE_IS_CLOSE = "Le trésor est proche !";
   public static final String FAILED_INITIAL_DISTANCE = "Failed to calculate initial distance to treasure. This should never happen.";
+  public static final String MEDIEVAL_FONT = "medieval-font";
   private static final double MESSAGE_BOX_MIN_WIDTH = 230.0;
   private static final double MESSAGE_BOX_MIN_HEIGHT = 250.0;
-  public static final Logger LOG = LoggerFactory.getLogger(MainGameScene.class);
   private int initialHealth;
   private GameMap gameMap;
   private Pane mapView;
@@ -66,6 +74,7 @@ public class MainGameScene extends BaseScene {
   @Getter
   private int initialDistanceToTreasure;
   private boolean hasSentMessage = false;
+  private boolean isPaused = false;
 
   private Circle adventurerCircle;
   private Group treasureCross;
@@ -80,7 +89,12 @@ public class MainGameScene extends BaseScene {
   private Runnable onGameOver;
 
   private final Rectangle effectOverlay = new Rectangle();
+  private OptionsPanel options;
+  private StackPane pause;
+  private Rectangle pauseRectangle;
 
+  private ScoreBoard scoreBoard;
+  private ScoreBoardOption scoreBoardOption;
 
   //V3 pattern Factory
   private MainGameScene(BorderPane root, SharedSize sharedSize) {
@@ -103,7 +117,7 @@ public class MainGameScene extends BaseScene {
     double windowHeight = sharedSize.getHeight();
     initialDistanceToTreasure = calculateMovesToTreasure();
     if (initialDistanceToTreasure == -1) {
-      LOG.error(FAILED_INITIAL_DISTANCE);
+      log.error(FAILED_INITIAL_DISTANCE);
       throw new InvalidGameStateException(FAILED_INITIAL_DISTANCE);
     }
 
@@ -112,6 +126,8 @@ public class MainGameScene extends BaseScene {
 
     initializeGameMap();
     createLeftPanel();
+    scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
+    scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight()); // updateSize and position
     createRightPanel();
 
     double mapWidth = windowWidth * 0.6; // 60% for the map
@@ -143,7 +159,7 @@ public class MainGameScene extends BaseScene {
     mapView.setBackground(new Background(backgroundMap));
 
     root.setLeft(leftPanel);
-    root.setRight(rightPanel);
+
     root.setCenter(mapView);
 
     // Set handler for keyboard events
@@ -156,73 +172,144 @@ public class MainGameScene extends BaseScene {
     effectOverlay.setVisible(false);
     root.getChildren().add(effectOverlay); // Must be the last children added to appear above all other children.
 
+    pauseRectangle = new Rectangle(windowWidth, windowHeight, Color.color(1.0, 1.0, 1.0, 0.3));
+    pauseRectangle.setPickOnBounds(false);
+    Text pauseText = new Text("Pause");
+    pauseText.setStyle("-fx-font-size:64px;");
+    pauseText.getStyleClass().add(MEDIEVAL_FONT);
+    pauseText.setFill(Color.DARKRED);
+    pauseText.setStroke(Color.BLACK);
+    pauseText.setEffect(new Bloom(0.2));
+    pause = new StackPane();
+    pause.getChildren().addAll(pauseRectangle, pauseText);
+    pause.setVisible(false);
+    pause.setPickOnBounds(false);
+    pause.setLayoutX(windowWidth / 2);
+    pause.setLayoutY(windowHeight / 2);
+
+    root.getChildren().add(pause);
+    root.setRight(rightPanel); // Defining the setRight here for it to never be covered by the pause StackPane
+    root.getChildren().add(scoreBoard); // Last to be added, the initially hidden ScoreBoard
+
+    // Hide the ScoreBoard by clicking outside it
+    root.setOnMouseClicked(e -> {
+      if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
+        toggleScoreBoard(e);
+      }
+    });
+
     setupResizeListeners();
+
+    // Handle focus
+    // Listener for focus (map/options)
+    options.addToggleListener(isShowing -> {
+      if (Boolean.TRUE.equals(isShowing)) {
+        options.requestFocus();
+        if (!isPaused) {
+          togglePause();
+        }
+      } else {
+        mapView.requestFocus();
+        togglePause();
+      }
+    });
+
+    mapView.requestFocus(); // The map has initial focus
+
+
   }
 
   @Override
   protected void onSizeChanged(double width, double height) {
-    // Determine if listeners need to be put here or not
+    options.updateSize(width, height);
+
+    scoreBoard.updateSize(width, height);
+    scoreBoard.updateStyles(width);
+    scoreBoard.layout();
+
+    scoreBoardOption.adjustContentLabelsFontSize(width);
+    // Determine if other listeners need to be put here or not
   }
 
   private void handleKeyPress(KeyEvent event) {
-    MoveResult moveResult = MoveResult.BLOCKED;
-    switch (event.getCode()) {
-      case UP -> {
-        moveResult = gameMap.moveAdventurer(0, -1);
-        movesCount++;
-      }
-      case DOWN -> {
-        moveResult = gameMap.moveAdventurer(0, 1);
-        movesCount++;
-      }
-      case LEFT -> {
-        moveResult = gameMap.moveAdventurer(-1, 0);
-        movesCount++;
-      }
-      case RIGHT -> {
-        moveResult = gameMap.moveAdventurer(1, 0);
-        movesCount++;
-      }
-      default -> handleOtherKeys(event);
+    if (options.isShowing()) {
+      return;
     }
+
+    KeyCode keyCode = event.getCode();
+    MoveResult moveResult = switch (keyCode) {
+      case UP, DOWN, LEFT, RIGHT -> handleMovement(keyCode);
+      case SPACE -> {
+        togglePause();
+        yield MoveResult.BLOCKED;
+      }
+      default -> {
+        handleOtherKeys(event);
+        yield MoveResult.BLOCKED;
+      }
+    };
+
+    handleMoveResult(moveResult);
+    event.consume();
+  }
+
+  private MoveResult handleMovement(KeyCode keyCode) {
+    if (isPaused) {
+      return MoveResult.BLOCKED;
+    }
+    return switch (keyCode) {
+      case UP -> gameMap.moveAdventurer(0, -1);
+      case DOWN -> gameMap.moveAdventurer(0, 1);
+      case LEFT -> gameMap.moveAdventurer(-1, 0);
+      case RIGHT -> gameMap.moveAdventurer(1, 0);
+      default -> MoveResult.BLOCKED; // This should never happen
+    };
+  }
+
+  private void handleMoveResult(MoveResult moveResult) {
     switch (moveResult) {
-      case MOVED -> {
-        movesCount++;
-        if (isTreasureCollected()) {
-          if (onGameEnd != null) {
-            onGameEnd.run();
-          } else {
-            LOG.warn("onGameEnd is null");
-          }
-        } else {
-          if (!treasureCross.isVisible()) {
-            updateTreasureVisibility();
-          }
-          updateGameView();
-        }
-      }
-      case WOUNDED -> {
-        showDamageEffect();
-        rightPanelController.addMessage(gameMap.getWoundsList().getLast().getWoundMessage());
-        if (isAdventurerDead(gameMap.getAdventurer())) {
-          if (onGameOver != null) {
-            onGameOver.run();
-          } else {
-            LOG.warn("onGameOver is null");
-          }
-        }
-      }
-      case OUT_OF_BOUNDS -> {
-        showOutOfBoundsEffect();
-        rightPanelController.addMessage("Vous ne pouvez pas quitter la carte sans le trésor !");
-      }
-      case BLOCKED -> LOG.info("BLOCKED");
-      // Do nothing for blocked moves
+      case MOVED -> handleSuccessfulMove();
+      case WOUNDED -> handleWoundedMove();
+      case OUT_OF_BOUNDS -> handleOutOfBoundsMove();
+      case BLOCKED -> log.info("BLOCKED");
     }
   }
 
+  private void handleSuccessfulMove() {
+    movesCount++;
+    if (isTreasureCollected()) {
+      if (onGameEnd != null) {
+        onGameEnd.run();
+      } else {
+        log.error("onGameEnd is null");
+      }
+    } else {
+      if (!treasureCross.isVisible()) {
+        updateTreasureVisibility();
+      }
+      updateGameView();
+    }
+  }
+
+  private void handleWoundedMove() {
+    showDamageEffect();
+    rightPanelController.addMessage(gameMap.getWoundsList().getLast().getWoundMessage());
+    if (isAdventurerDead(gameMap.getAdventurer())) {
+      if (onGameOver != null) {
+        onGameOver.run();
+      } else {
+        log.error("onGameOver is null");
+      }
+    }
+  }
+
+  private void handleOutOfBoundsMove() {
+    showOutOfBoundsEffect();
+    rightPanelController.addMessage("Vous ne pouvez pas quitter la carte sans le trésor !");
+  }
+
   private void handleOtherKeys(KeyEvent event) {
-    LOG.warn("Unhandled key press: {}", event.getCode());
+    log.warn("Unhandled key press: {}", event.getCode());
   }
 
   private void updateGameView() {
@@ -233,10 +320,10 @@ public class MainGameScene extends BaseScene {
     double advX = xOffset + (tileX + 0.5) * tileSize;
     double advY = yOffset + (tileY + 0.5) * tileSize;
 
-    LOG.debug("Scene dimensions: {} x {}", getWidth(), getHeight());
-    LOG.debug("Map dimensions: {} x {}", gameMap.getMapWidth(), gameMap.getMapHeight());
-    LOG.debug("Tile size: {}", tileSize);
-    LOG.debug("Offsets: x={}, y={}", xOffset, yOffset);
+    log.debug("Scene dimensions: {} x {}", getWidth(), getHeight());
+    log.debug("Map dimensions: {} x {}", gameMap.getMapWidth(), gameMap.getMapHeight());
+    log.debug("Tile size: {}", tileSize);
+    log.debug("Offsets: x={}, y={}", xOffset, yOffset);
 
     // Update size and position of the adventurer
     adventurerCircle.setCenterX(advX);
@@ -271,7 +358,7 @@ public class MainGameScene extends BaseScene {
     line1.setStrokeWidth(tileSize / 20);
     line2.setStrokeWidth(tileSize / 20);
 
-    LOG.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
+    log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
         gameMap.getAdventurer().getTileX(),
         gameMap.getAdventurer().getTileY(),
         advX, advY);
@@ -356,7 +443,7 @@ public class MainGameScene extends BaseScene {
     double availableWidth = getWidth() / 2;
     double availableHeight = getHeight();
 
-    LOG.debug("availableWidth : {}, availableHeight : {}", availableWidth, availableHeight);
+    log.debug("availableWidth : {}, availableHeight : {}", availableWidth, availableHeight);
 
     // Calculate tile size to adapt to window
     tileSize = Math.min(
@@ -409,7 +496,7 @@ public class MainGameScene extends BaseScene {
     HBox playerNameBox = new HBox();
     Label playerNameLabel = new Label(gameMap.getAdventurer().getName());
     playerNameLabel.setStyle("-fx-font-size: 42px; -fx-text-fill: #ffc400");
-    playerNameLabel.getStyleClass().add("medieval-font");
+    playerNameLabel.getStyleClass().add(MEDIEVAL_FONT);
     playerNameBox.setAlignment(Pos.CENTER);
     playerNameBox.getChildren().add(playerNameLabel);
     playerNameBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
@@ -450,7 +537,7 @@ public class MainGameScene extends BaseScene {
     statsBox.setAlignment(Pos.TOP_CENTER);
     Label statsLabel = new Label("Stats");
     statsLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: #ffc400");
-    statsLabel.getStyleClass().add("medieval-font");
+    statsLabel.getStyleClass().add(MEDIEVAL_FONT);
     statsLabel.setPadding(new Insets(16));
     statsBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
 
@@ -496,8 +583,15 @@ public class MainGameScene extends BaseScene {
 
     VBox optionsBox = new VBox(5);
     optionsBox.setAlignment(Pos.TOP_RIGHT);
-    Text optionsPlaceholder = new Text("Options placeholder");
-    optionsBox.getChildren().add(optionsPlaceholder);
+
+    CheckboxOption option1 = new CheckboxOption("Option 1", true);
+    CheckboxOption option2 = new CheckboxOption("Option 2", false);
+    scoreBoardOption = new ScoreBoardOption("High Scores", scoreBoard, highScoreManager);
+    CheckboxOption option3 = new CheckboxOption("Option 3", false);
+
+    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), option1, option2, option3, scoreBoardOption);
+    optionsBox.getChildren().add(options);
+
     VBox messagesBox = new VBox(5);
     messagesBox.setPadding(new Insets(20));
     messagesBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
@@ -546,6 +640,11 @@ public class MainGameScene extends BaseScene {
       rightPanel.setPrefWidth(sideWidth);
       mapView.setPrefWidth(mapWidth);
       effectOverlay.setWidth(newVal.doubleValue());
+      pauseRectangle.setWidth(newVal.doubleValue());
+      pause.setLayoutX(newVal.doubleValue() / 2);
+      if (!scoreBoard.isShowing()) {
+        scoreBoard.setTranslateX(totalWidth); // keeps it hidden on Scene and windows resizing
+      }
 
       handleResize();
       updateSize();
@@ -556,6 +655,8 @@ public class MainGameScene extends BaseScene {
       rightPanel.setPrefHeight(newVal.doubleValue());
       mapView.setPrefHeight(newVal.doubleValue());
       effectOverlay.setHeight(newVal.doubleValue());
+      pauseRectangle.setHeight(newVal.doubleValue());
+      pause.setLayoutY(newVal.doubleValue() / 2);
 
       handleResize();
       updateSize();
@@ -654,6 +755,24 @@ public class MainGameScene extends BaseScene {
     }
     return direction;
   }
+
+  private void togglePause() {
+    isPaused = !isPaused;
+    pause.setVisible(isPaused);
+    log.info("en pause : {}", isPaused);
+  }
+
+  private void toggleScoreBoard(MouseEvent event) {
+    scoreBoard.setVisible(true);
+    scoreBoard.toggleDisplay();
+    if (scoreBoard.isShowing()) {
+      scoreBoardOption.getShowScoresLabel().setText("Masquer les scores");
+    } else {
+      scoreBoardOption.getShowScoresLabel().setText("Afficher high scores");
+    }
+    event.consume();
+  }
+
 
 }
 
