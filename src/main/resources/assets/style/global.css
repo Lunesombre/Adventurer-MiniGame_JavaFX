@@ -33,7 +33,34 @@
   -fx-font-weight: bold;
 }
 
+.list-view .scroll-bar:vertical {
+  -fx-background-color: transparent;
+}
 
+.list-view .scroll-bar:vertical .thumb {
+  -fx-background-color: #a0a0a0;
+  -fx-background-radius: 5em;
+}
+
+.list-view .scroll-bar:vertical .track {
+  -fx-background-color: transparent;
+}
+
+.icon-background {
+  -fx-fill: transparent;
+  -fx-stroke: transparent;
+  -fx-stroke-width: 1;
+}
+
+.icon-background:hover {
+  -fx-fill: rgba(255, 255, 255, 0.1);
+  -fx-stroke: lightgray;
+}
+
+
+/*
+Styles for buttons
+ */
 .button {
   -fx-cursor: hand;
   -fx-max-width: 400;
@@ -62,17 +89,16 @@
   -fx-background-color: #bc4242;
 }
 
-.list-view .scroll-bar:vertical {
-  -fx-background-color: transparent;
-}
 
-.list-view .scroll-bar:vertical .thumb {
-  -fx-background-color: #a0a0a0;
-  -fx-background-radius: 5em;
-}
-
-.list-view .scroll-bar:vertical .track {
-  -fx-background-color: transparent;
+.key-binding-button {
+  -fx-background-color: #ca7840;
+  -fx-text-fill: #e4e4e4;
+  -fx-max-width: 100;
+  -fx-min-width: 100;
+  -fx-font-size: 16px;
+  -fx-font-weight: normal;
+  -fx-background-radius: 6px;
+  -fx-border-radius: 5px;
 }
 
 /* Styles for the alerts
@@ -110,10 +136,72 @@
   -fx-text-fill: #dcd4cb;
 }
 
+.reset-high-scores-alert {
+  -fx-background-color: rgb(174, 173, 173);
+
+}
+
+.reset-high-scores-alert > .header-panel {
+  -fx-background-color: rgb(64, 63, 63);
+}
+
+.reset-high-scores-alert > .header-panel > .label {
+  -fx-font-weight: bold;
+  -fx-text-fill: #d8c601;
+  -fx-font-size: 20px;
+}
+
+.reset-high-scores-alert .content {
+  -fx-font-weight: bold;
+  -fx-font-size: 20px;
+  -fx-text-fill: #c51222;
+}
+
+.reset-high-scores-alert .button {
+  -fx-max-width: 130;
+  -fx-min-width: 130;
+  -fx-font-size: 20px;
+  -fx-background-radius: 11px;
+  -fx-border-radius: 10px;
+  -fx-border-width: 1px;
+  -fx-background-insets: 0;
+}
+
+.reset-high-scores-alert .reset-confirm-button {
+  -fx-background-color: #ff6b6b; /* Red */
+  -fx-text-fill: #dad8d8; /* White-ish */
+}
+
+.reset-high-scores-alert .reset-cancel-button {
+  -fx-background-color: #feca57; /* Yellow */
+  -fx-text-fill: black;
+}
+
+.reset-high-scores-alert .reset-confirm-button:hover {
+  -fx-background-color: #ff5252; /* Darker Red */
+  -fx-text-fill: #e1dfdf;
+}
+
+.reset-high-scores-alert .reset-cancel-button:hover {
+  -fx-background-color: #ffb900; /* Darker Yellow */
+  -fx-text-fill: black;
+}
+
+
 /*
 Styles for ScoreBoard
  */
-.scoreBoardTitle {
+.scoreboard {
+  -fx-background-color: rgba(250, 200, 80, 0.9);
+  -fx-padding: 20;
+  -fx-text-fill: #404040;
+  -fx-border-color: gold;
+  -fx-border-width: 3px;
+  -fx-border-radius: 15px;
+  -fx-background-radius: 15px
+}
+
+.scoreboard-title {
   -fx-font-family: 'Medieval Scroll of Wisdom';
   -fx-font-size: 30px;
   -fx-text-fill: #ffc400;
@@ -224,6 +312,39 @@ Styles for ScoreBoard
   -fx-fill: #ea204d;
   -fx-font-weight: bold;
   -fx-stroke: #322929;
+}
+
+/*
+Options styles
+ */
+.option-titled-pane > .title {
+  -fx-background-color: #676767;
+  -fx-font-weight: bold;
+}
+
+.option-titled-pane > .content {
+  -fx-background-color: #505050;
+  -fx-border-width: 0;
+}
+
+.option-titled-pane > .content .label {
+  -fx-text-fill: #e1e1e1; /* Labels' text's color in the ScoreBoardOption */
+  -fx-font-size: 16px;
+}
+
+.option-titled-pane > .content .label:hover {
+  -fx-text-fill: #e8c44c;
+}
+
+.option-titled-pane > .title > .arrow-button .arrow {
+  -fx-background-color: #ffc400; /* Change arrow color */
+  /*-fx-shape: "M0,0 L10,5 L0,10 Z"; !* Change arrow shape *!*/
+  -fx-scale-x: 0.8; /* Reduce horizontal size */
+  -fx-scale-y: 0.8; /* Reduce vertical size */
+}
+
+.option-titled-pane > .title > .arrow-button {
+  -fx-background-color: transparent; /* Make the hidden arrow button transparent */
 }
 
 

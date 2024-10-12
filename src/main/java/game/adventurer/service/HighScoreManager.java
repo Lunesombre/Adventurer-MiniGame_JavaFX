@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class HighScoreManager {
 
   private static final int MAX_SCORES = 30;
   private final String filePath;
+  @Getter
   private List<Score> highScores;
 
   public HighScoreManager() {

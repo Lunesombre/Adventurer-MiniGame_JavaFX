@@ -5,12 +5,14 @@ import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
 import game.adventurer.ui.common.TransitionScene;
 import game.adventurer.util.TriConsumer;
 import java.util.Arrays;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -34,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PlayerSetupScene extends BaseScene {
 
+  public static final String DISPLAY_HIGH_SCORES = "Afficher les meilleurs scores";
+  public static final String HIDE_HIGH_SCORES = "Masquer les meilleurs scores";
   private TextField adventurerNameField;
   private ToggleGroup mapSizeGroup;
   private ToggleGroup difficultyToggleGroup;
@@ -46,6 +50,8 @@ public class PlayerSetupScene extends BaseScene {
   private final HighScoreManager highScoreManager;
   private ScoreBoard scoreBoard;
   private Text toggleText;
+  private VBox mainContent;
+  private OptionsPanel options;
 
 
   public PlayerSetupScene(SharedSize sharedSize, HighScoreManager highScoreManager) {
@@ -56,12 +62,13 @@ public class PlayerSetupScene extends BaseScene {
 
   @Override
   protected void initialize() {
+
     Label errorLabel;
     StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
     root.setPadding(new Insets(20));
     root.setStyle("-fx-background-color: #403f3f;");
-    VBox mainContent = new VBox(20);
+    mainContent = new VBox(20);
     mainContent.setAlignment(Pos.CENTER);
 
     Label titleLabel = new Label("Adventurer Setup");
@@ -150,23 +157,25 @@ public class PlayerSetupScene extends BaseScene {
     //ScoreBoard
     scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
     // scoreBoardText
-    toggleText = new Text("Afficher les meilleurs scores");
+    toggleText = new Text(DISPLAY_HIGH_SCORES);
     toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
     toggleText.setOnMouseClicked(this::toggleScoreBoard);
     toggleText.setOnMouseEntered(e -> toggleText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
     toggleText.setOnMouseExited(e -> toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
 
+    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight());
+
     mainContent.getChildren()
         .addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, difficultyModeLabel, difficultyModeBox, startButton,
             toggleText);
-    root.getChildren().addAll(mainContent, scoreBoard);
+    root.getChildren().addAll(mainContent, scoreBoard, options);
     scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight());
     StackPane.setAlignment(scoreBoard, Pos.CENTER_RIGHT);
     // Hide the ScoreBoard by clicking outside it
     root.setOnMouseClicked(e -> {
       if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
         scoreBoard.toggleDisplay();
-        toggleText.setText(scoreBoard.isShowing() ? "Masquer les meilleurs scores" : "Afficher les meilleurs scores");
+        toggleText.setText(scoreBoard.isShowing() ? HIDE_HIGH_SCORES : DISPLAY_HIGH_SCORES);
       }
 
     });
@@ -184,6 +193,15 @@ public class PlayerSetupScene extends BaseScene {
         adventurerNameField.setStyle(
             "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-border-color: #2ef32e; -fx-border-width: 2px; -fx-background-radius: 15px; -fx-border-radius: 15px;");
         errorLabel.setVisible(false);
+      }
+    });
+
+    // Handle focus
+    options.addToggleListener(isShowing -> {
+      if (Boolean.TRUE.equals(isShowing)) {
+        options.requestFocus();
+      } else {
+        restoreDefaultFocus();
       }
     });
 
@@ -211,6 +229,7 @@ public class PlayerSetupScene extends BaseScene {
     scoreBoard.updateStyles(newWidth);
     scoreBoard.layout();
     scoreBoard.requestLayout();
+    options.getChildren().getFirst().setTranslateX(newWidth); // keeps the options "optionsContent" hidden on resize
   }
 
 
@@ -235,7 +254,6 @@ public class PlayerSetupScene extends BaseScene {
   }
 
   public void setOnStartGame(TriConsumer<String, MapSize, DifficultyLevel> action) {
-    // ajouter le paramètre difficultyLevel dans cette méthode et l'utiliser
     startButton.setOnAction(e -> {
       playerName = adventurerNameField.getText().trim();
       playerName = playerName.isEmpty() ? "Michel" : playerName;
@@ -282,11 +300,28 @@ public class PlayerSetupScene extends BaseScene {
     scoreBoard.setVisible(true);
     scoreBoard.toggleDisplay();
     if (scoreBoard.isShowing()) {
-      toggleText.setText("Masquer les meilleurs scores");
+      toggleText.setText(HIDE_HIGH_SCORES);
     } else {
-      toggleText.setText("Afficher les meilleurs scores");
+      toggleText.setText(DISPLAY_HIGH_SCORES);
     }
     event.consume();
   }
+
+  private void restoreDefaultFocus() {
+    if (adventurerNameField.getText().isEmpty()) {
+      adventurerNameField.requestFocus();
+    } else if (!startButton.isDisabled()) {
+      startButton.requestFocus();
+    } else {
+      // Loop though focusable elements in logical order
+      for (Node node : mainContent.getChildren()) {
+        if (node.isFocusTraversable() && !node.isDisabled()) {
+          node.requestFocus();
+          break;
+        }
+      }
+    }
+  }
+
 
 }
