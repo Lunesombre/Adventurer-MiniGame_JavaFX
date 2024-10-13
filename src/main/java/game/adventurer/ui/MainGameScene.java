@@ -17,8 +17,11 @@ import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
 import game.adventurer.ui.common.option.CheckboxOption;
+import game.adventurer.ui.common.option.KeyBindingOption;
 import game.adventurer.ui.common.option.ScoreBoardOption;
 import game.adventurer.util.PathfindingUtil;
+import java.util.HashMap;
+import java.util.Map;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -92,6 +95,7 @@ public class MainGameScene extends BaseScene {
   private OptionsPanel options;
   private StackPane pause;
   private Rectangle pauseRectangle;
+  private KeyBindingOption movementBindings;
 
   private ScoreBoard scoreBoard;
   private ScoreBoardOption scoreBoardOption;
@@ -228,6 +232,7 @@ public class MainGameScene extends BaseScene {
     scoreBoard.layout();
 
     scoreBoardOption.adjustContentLabelsFontSize(width);
+
     // Determine if other listeners need to be put here or not
   }
 
@@ -235,34 +240,38 @@ public class MainGameScene extends BaseScene {
     if (options.isShowing()) {
       return;
     }
-
+    Map<String, KeyCode> bindings = movementBindings.getBindings();
     KeyCode keyCode = event.getCode();
-    MoveResult moveResult = switch (keyCode) {
-      case UP, DOWN, LEFT, RIGHT -> handleMovement(keyCode);
-      case SPACE -> {
-        togglePause();
-        yield MoveResult.BLOCKED;
-      }
-      default -> {
-        handleOtherKeys(event);
-        yield MoveResult.BLOCKED;
-      }
-    };
+    MoveResult moveResult;
+    if (bindings.containsValue(keyCode)) {
+      moveResult = handleMovement(keyCode, bindings);
+    } else {
+      moveResult = switch (keyCode) {
+        case SPACE -> {
+          togglePause();
+          yield MoveResult.BLOCKED;
+        }
+        default -> {
+          handleOtherKeys(event);
+          yield MoveResult.BLOCKED;
+        }
+      };
+    }
 
     handleMoveResult(moveResult);
     event.consume();
   }
 
-  private MoveResult handleMovement(KeyCode keyCode) {
+  private MoveResult handleMovement(KeyCode keyCode, Map<String, KeyCode> bindings) {
     if (isPaused) {
       return MoveResult.BLOCKED;
     }
     return switch (keyCode) {
-      case UP -> gameMap.moveAdventurer(0, -1);
-      case DOWN -> gameMap.moveAdventurer(0, 1);
-      case LEFT -> gameMap.moveAdventurer(-1, 0);
-      case RIGHT -> gameMap.moveAdventurer(1, 0);
-      default -> MoveResult.BLOCKED; // This should never happen
+      case KeyCode c when keyCode == bindings.get("Haut") -> gameMap.moveAdventurer(0, -1);
+      case KeyCode c when keyCode == bindings.get("Bas") -> gameMap.moveAdventurer(0, 1);
+      case KeyCode c when keyCode == bindings.get("Gauche") -> gameMap.moveAdventurer(-1, 0);
+      case KeyCode c when keyCode == bindings.get("Droite") -> gameMap.moveAdventurer(1, 0);
+      default -> MoveResult.BLOCKED;
     };
   }
 
@@ -271,7 +280,7 @@ public class MainGameScene extends BaseScene {
       case MOVED -> handleSuccessfulMove();
       case WOUNDED -> handleWoundedMove();
       case OUT_OF_BOUNDS -> handleOutOfBoundsMove();
-      case BLOCKED -> log.info("BLOCKED");
+      case BLOCKED -> log.debug("BLOCKED");
     }
   }
 
@@ -587,9 +596,16 @@ public class MainGameScene extends BaseScene {
     CheckboxOption option1 = new CheckboxOption("Option 1", true);
     CheckboxOption option2 = new CheckboxOption("Option 2", false);
     scoreBoardOption = new ScoreBoardOption("High Scores", scoreBoard, highScoreManager);
-    CheckboxOption option3 = new CheckboxOption("Option 3", false);
 
-    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), option1, option2, option3, scoreBoardOption);
+    Map<String, KeyCode> defaultMovementBindings = new HashMap<>();
+    defaultMovementBindings.put("Haut", KeyCode.UP);
+    defaultMovementBindings.put("Bas", KeyCode.DOWN);
+    defaultMovementBindings.put("Gauche", KeyCode.LEFT);
+    defaultMovementBindings.put("Droite", KeyCode.RIGHT);
+
+    movementBindings = new KeyBindingOption("Modifier les touches", defaultMovementBindings);
+
+    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), option1, option2, scoreBoardOption, movementBindings);
     optionsBox.getChildren().add(options);
 
     VBox messagesBox = new VBox(5);

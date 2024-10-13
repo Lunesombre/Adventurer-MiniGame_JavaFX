@@ -37,7 +37,7 @@ public class OptionsPanel extends StackPane {
   private boolean isShowing = false;
   private final List<Consumer<Boolean>> toggleListeners = new ArrayList<>();
 
-  public OptionsPanel(double sceneWidth, double sceneHeight, Option... options) {
+  public OptionsPanel(double sceneWidth, double sceneHeight, Option<?>... options) {
     // Icon
     Circle iconBackground = new Circle(20);
     iconBackground.setCursor(Cursor.HAND);
@@ -54,39 +54,41 @@ public class OptionsPanel extends StackPane {
     iconContainer.setMaxSize(40, 40);
 
     // Options content
-    optionsContent = new VBox(PADDING_VALUE);
+    optionsContent = new VBox();
     optionsContent.setStyle("-fx-background-color: rgba(50,50,50,0.8); -fx-padding: 20;");
     optionsContent.setPrefWidth(sceneWidth * 0.20); // 20% of the scene width
     optionsContent.setMaxHeight(sceneHeight);
 
     // Options placeholders at first
     Label optionsLabel = new Label("Options");
+    optionsLabel.setStyle("-fx-padding: 0 0 10px 0;");
     optionsLabel.setTextFill(Color.WHITE);
     optionsContent.getChildren().add(optionsLabel);
     if (options.length == 0) {
       Label noOption = new Label("Aucune option disponible");
-      noOption.setTextFill(Color.WHITE);
       optionsContent.getChildren().add(noOption);
     } else {
-      for (Option option : options) {
+      for (Option<?> option : options) {
         HBox optionLine;
-        if (option.getNode() instanceof TitledPane) {
+        if (option.getNode() instanceof TitledPane titledPane) {
           // don't add the Label in the HBox, the name's already on the titledPane
-          log.debug(option.getNode().toString());
-          optionLine = new HBox(15, option.getNode());
+          log.debug(titledPane.toString());
+          titledPane.setMaxHeight(100);
+          optionLine = new HBox(15, titledPane);
         } else {
           Label optionLabel = new Label(option.getName());
-          optionLabel.setTextFill(Color.WHITE);
+          optionLabel.setStyle("-fx-font-weight: bold;");
+          optionLabel.setMaxHeight(100);
           log.debug(option.getNode().toString());
           optionLine = new HBox(15, optionLabel, option.getNode());
         }
+        optionLine.setFillHeight(true); // in combination of setting a big enough maxHeight for the Labels,
+        // renders the Labels vertically centered in the HBox
+        optionLine.getStyleClass().add("option-line");
 
         optionsContent.getChildren().add(optionLine);
 
-        option.onValueChange(value -> {
-          // Really handle it
-          log.info("Option '{}' changed to: {}", option.getName(), value);
-        });
+        option.onValueChange(value -> log.info("Option '{}' changed to: {}", option.getName(), value));
       }
     }
 
