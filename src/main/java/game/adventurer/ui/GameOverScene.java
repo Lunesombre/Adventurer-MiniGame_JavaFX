@@ -1,11 +1,14 @@
 package game.adventurer.ui;
 
+import game.adventurer.common.Localizable;
 import game.adventurer.common.SharedSize;
 import game.adventurer.config.AppConfig;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.base.Wound;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
 import java.util.List;
+import java.util.Locale;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -21,13 +24,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
-public class GameOverScene extends BaseScene {
+public class GameOverScene extends BaseScene implements Localizable {
 
   private final GameMap gameMap; // retrieve the Adventurer and the Wounds list.
-  public static final String GAME_OVER_TITLE = "Vous êtes mort, ";
   public static final String SKULL_PATH = AppConfig.getInstance().getImagesPath() + "game_over_skull.png";
-  private final Button replayButton = new Button("Rejouer");
-  private final Button quitButton = new Button("Quitter");
+  private static final LocalizedMessageService messageService = LocalizedMessageService.getInstance();
+  private final Button replayButton = new Button(messageService.getMessage("button.replay"));
+  private final Button quitButton = new Button(messageService.getMessage("button.exit"));
+  private Label titleLabel;
 
   public GameOverScene(GameMap gameMap, SharedSize sharedSize) {
     super(new VBox(20), sharedSize);
@@ -42,7 +46,7 @@ public class GameOverScene extends BaseScene {
     root.setAlignment(Pos.CENTER);
 
     //Scene Title
-    Label titleLabel = new Label(GAME_OVER_TITLE + gameMap.getAdventurer().getName());
+    titleLabel = new Label(messageService.getMessage("gameOver.title", gameMap.getAdventurer().getName()));
     titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #FF0000;");
     titleLabel.getStyleClass().add("medieval-font");
 
@@ -111,6 +115,13 @@ public class GameOverScene extends BaseScene {
     quitButton.setOnAction(e -> action.run());
   }
 
+  @Override
+  public void updateLanguage(Locale newLocale) {
+    titleLabel.setText(messageService.getMessage("gameOver.title", gameMap.getAdventurer().getName()));
+    quitButton.setText(messageService.getMessage("button.exit"));
+    replayButton.setText(messageService.getMessage("button.replay"));
+  }
+
   // static inner class to get rid of the code smell detected by Sonar
   // (java:S1171 warning) that I had when I used a non-static initializer in my factory.
   private static class WoundListCell extends ListCell<Wound> {
@@ -140,7 +151,7 @@ public class GameOverScene extends BaseScene {
       if (empty || wound == null) {
         setGraphic(null);
       } else {
-        label.setText(wound.getCause().getCauseName() + ": " + wound.getWoundMessage());
+        label.setText(messageService.getMessage(wound.getCause().getCauseNameKey()) + ": " + messageService.getMessage(wound.getWoundMessageKey()));
 
         // Styling the last wound cell, then styling each cell with a slightly different background color on even/uneven cells.
         if (getIndex() == lastWoundIndex) {

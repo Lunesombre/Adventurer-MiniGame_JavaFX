@@ -1,15 +1,20 @@
 package game.adventurer.ui;
 
+import game.adventurer.common.Localizable;
 import game.adventurer.common.SharedSize;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
 import game.adventurer.service.HighScoreManager;
+import game.adventurer.service.LocalizationService;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
 import game.adventurer.ui.common.TransitionScene;
+import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.util.TriConsumer;
 import java.util.Arrays;
+import java.util.Locale;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -34,11 +39,15 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PlayerSetupScene extends BaseScene {
+public class PlayerSetupScene extends BaseScene implements Localizable {
 
-  public static final String DISPLAY_HIGH_SCORES = "Afficher les meilleurs scores";
-  public static final String HIDE_HIGH_SCORES = "Masquer les meilleurs scores";
-  private TextField adventurerNameField;
+  public static final String SETUP_DIFFICULTY_HARD = "setup.difficulty.hard";
+  public static final String SETUP_DIFFICULTY_EASY = "setup.difficulty.easy";
+  public static final String SETUP_MAP_SIZE_SMALL = "setup.mapSize.small";
+  public static final String SETUP_MAP_SIZE_LARGE = "setup.mapSize.large";
+  private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
+  private String displayHighScores;
+  private String hideHighScores;
   private ToggleGroup mapSizeGroup;
   private ToggleGroup difficultyToggleGroup;
   private Button startButton;
@@ -53,16 +62,37 @@ public class PlayerSetupScene extends BaseScene {
   private VBox mainContent;
   private OptionsPanel options;
 
+  private final LocalizationService localizationService;
+  // localizable texts
+  private Label titleLabel;
+  private TextField adventurerNameField;
+  private Label mapSizeLabel;
+  private RadioButton smallMap;
+  private RadioButton mediumMap;
+  private RadioButton largeMap;
+  private Tooltip smallMapTooltip;
+  private Tooltip mediumMapTooltip;
+  private Tooltip largeMapTooltip;
+  private Label difficultyModeLabel;
+  private RadioButton easyMode;
+  private RadioButton mediumMode;
+  private RadioButton hardMode;
+  private Tooltip easyModeTooltip;
+  private Tooltip normalModeTooltip;
+  private Tooltip hardModeTooltip;
 
-  public PlayerSetupScene(SharedSize sharedSize, HighScoreManager highScoreManager) {
+  public PlayerSetupScene(SharedSize sharedSize, HighScoreManager highScoreManager,
+      LocalizationService localizationService) {
     super(new StackPane(), sharedSize);
     this.highScoreManager = highScoreManager;
+    this.localizationService = localizationService;
+    this.displayHighScores = localizedMessageService.getMessage("highScores.show");
+    this.hideHighScores = localizedMessageService.getMessage("highScores.hide");
     initialize();
   }
 
   @Override
   protected void initialize() {
-
     Label errorLabel;
     StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
@@ -71,12 +101,12 @@ public class PlayerSetupScene extends BaseScene {
     mainContent = new VBox(20);
     mainContent.setAlignment(Pos.CENTER);
 
-    Label titleLabel = new Label("Adventurer Setup");
+    titleLabel = new Label(localizedMessageService.getMessage("setup.title"));
     titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #46a7b3;");
     titleLabel.getStyleClass().add("bold-text");
 
     adventurerNameField = new TextField();
-    adventurerNameField.setPromptText("Enter Adventurer Name");
+    adventurerNameField.setPromptText(localizedMessageService.getMessage("setup.adventurer.prompt"));
     adventurerNameField.setStyle(
         "-fx-font-size: 24px; -fx-text-fill: #7a8181; -fx-prompt-text-fill: lightgray; -fx-max-width: 400; -fx-background-radius: 15px;");
 
@@ -84,24 +114,24 @@ public class PlayerSetupScene extends BaseScene {
     errorLabel.setStyle("-fx-text-fill: red;");
     errorLabel.setVisible(false); // Default : hidden
 
-    Label mapSizeLabel = new Label("Choose Map Size:");
+    mapSizeLabel = new Label(localizedMessageService.getMessage("setup.mapSize.title"));
     mapSizeLabel.setStyle(" -fx-font-size: 24px; -fx-text-fill: #747777; -fx-font-weight: bold");
     mapSizeGroup = new ToggleGroup();
-    RadioButton smallMap = new RadioButton("Small");
+    smallMap = new RadioButton(localizedMessageService.getMessage(SETUP_MAP_SIZE_SMALL));
     String radioStyles = "-fx-font-size: 18px; -fx-text-fill: #747777";
     smallMap.setStyle(radioStyles);
-    RadioButton mediumMap = new RadioButton("Medium");
+    mediumMap = new RadioButton(localizedMessageService.getMessage("setup.mapSize.medium"));
     mediumMap.setStyle(radioStyles);
-    RadioButton largeMap = new RadioButton("Large");
+    largeMap = new RadioButton(localizedMessageService.getMessage(SETUP_MAP_SIZE_LARGE));
     largeMap.setStyle(radioStyles);
     smallMap.setToggleGroup(mapSizeGroup);
     mediumMap.setToggleGroup(mapSizeGroup);
     largeMap.setToggleGroup(mapSizeGroup);
     mediumMap.setSelected(true);
     //Tooltip for map sizes
-    Tooltip smallMapTooltip = new Tooltip("Petite carte : 10x10 cases");
-    Tooltip mediumMapTooltip = new Tooltip("Carte moyenne : 20x20 cases");
-    Tooltip largeMapTooltip = new Tooltip("Grande carte : 40x40 cases");
+    smallMapTooltip = new Tooltip(localizedMessageService.getMessage("setup.mapSize.small.tooltip"));
+    mediumMapTooltip = new Tooltip(localizedMessageService.getMessage("setup.mapSize.medium.tooltip"));
+    largeMapTooltip = new Tooltip(localizedMessageService.getMessage("setup.mapSize.large.tooltip"));
     smallMap.setTooltip(smallMapTooltip);
     mediumMap.setTooltip(mediumMapTooltip);
     largeMap.setTooltip(largeMapTooltip);
@@ -121,18 +151,18 @@ public class PlayerSetupScene extends BaseScene {
     HBox difficultyModeBox = new HBox(20);
     difficultyModeBox.setMinWidth(400);
     difficultyModeBox.setMaxWidth(500);
-    Label difficultyModeLabel = new Label("Choose difficulty mode:");
+    difficultyModeLabel = new Label(localizedMessageService.getMessage("setup.difficulty.title"));
     difficultyModeLabel.setStyle(" -fx-font-size: 24px; -fx-text-fill: #747777; -fx-font-weight: bold");
     difficultyToggleGroup = new ToggleGroup();
-    RadioButton easyMode = new RadioButton("Easy");
+    easyMode = new RadioButton(localizedMessageService.getMessage(SETUP_DIFFICULTY_EASY));
     easyMode.setStyle(radioStyles);
-    RadioButton mediumMode = new RadioButton("Normal");
+    mediumMode = new RadioButton(localizedMessageService.getMessage("setup.difficulty.normal"));
     mediumMode.setStyle(radioStyles);
-    RadioButton hardMode = new RadioButton("Hard");
+    hardMode = new RadioButton(localizedMessageService.getMessage(SETUP_DIFFICULTY_HARD));
     hardMode.setStyle(radioStyles);
-    Tooltip easyModeTooltip = new Tooltip("Position du trésor connue dès le départ, marquée d'une croix rouge.");
-    Tooltip normalModeTooltip = new Tooltip("Direction générale du trésor donnée, vous le verrez à proximité.");
-    Tooltip hardModeTooltip = new Tooltip("Direction générale du trésor donnée, il sera plus dur à trouver");
+    easyModeTooltip = new Tooltip(localizedMessageService.getMessage("setup.difficulty.easy.tooltip"));
+    normalModeTooltip = new Tooltip(localizedMessageService.getMessage("setup.difficulty.normal.tooltip"));
+    hardModeTooltip = new Tooltip(localizedMessageService.getMessage("setup.difficulty.hard.tooltip"));
     easyMode.setTooltip(easyModeTooltip);
     mediumMode.setTooltip(normalModeTooltip);
     hardMode.setTooltip(hardModeTooltip);
@@ -152,18 +182,20 @@ public class PlayerSetupScene extends BaseScene {
     HBox.setHgrow(spacer4, Priority.ALWAYS);
     difficultyModeBox.getChildren().addAll(easyMode, spacer3, mediumMode, spacer4, hardMode);
 
-    startButton = new Button("Start Adventure");
+    startButton = new Button(localizedMessageService.getMessage("setup.start.button"));
 
     //ScoreBoard
     scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
     // scoreBoardText
-    toggleText = new Text(DISPLAY_HIGH_SCORES);
+    toggleText = new Text(displayHighScores);
     toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
     toggleText.setOnMouseClicked(this::toggleScoreBoard);
     toggleText.setOnMouseEntered(e -> toggleText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
     toggleText.setOnMouseExited(e -> toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
 
-    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight());
+    // Options
+    LanguageOption languageOption = new LanguageOption(localizedMessageService, localizationService, 24);
+    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), languageOption);
 
     mainContent.getChildren()
         .addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, difficultyModeLabel, difficultyModeBox, startButton,
@@ -175,7 +207,7 @@ public class PlayerSetupScene extends BaseScene {
     root.setOnMouseClicked(e -> {
       if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
         scoreBoard.toggleDisplay();
-        toggleText.setText(scoreBoard.isShowing() ? HIDE_HIGH_SCORES : DISPLAY_HIGH_SCORES);
+        toggleText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
       }
 
     });
@@ -205,7 +237,8 @@ public class PlayerSetupScene extends BaseScene {
       }
     });
 
-
+    // Register this class as Localizable - do it after the localizable texts are set to avoid Null Pointer Exception.
+    localizationService.registerLocalizable(this);
   }
 
   @Override
@@ -235,9 +268,9 @@ public class PlayerSetupScene extends BaseScene {
 
   private MapSize getSelectedMapSize() {
     RadioButton selectedButton = (RadioButton) mapSizeGroup.getSelectedToggle();
-    if (selectedButton.getText().contains("Small")) {
+    if (selectedButton.getText().contains(localizedMessageService.getMessage(SETUP_MAP_SIZE_SMALL))) {
       return MapSize.SMALL;
-    } else if (selectedButton.getText().contains("Large")) {
+    } else if (selectedButton.getText().contains(localizedMessageService.getMessage((SETUP_MAP_SIZE_LARGE)))) {
       return MapSize.LARGE;
     } else {
       return MapSize.MEDIUM;
@@ -246,11 +279,13 @@ public class PlayerSetupScene extends BaseScene {
 
   private DifficultyLevel getSelectedDifficultyLevel() {
     RadioButton selected = (RadioButton) difficultyToggleGroup.getSelectedToggle();
-    return switch (selected.getText()) {
-      case "Easy" -> DifficultyLevel.EASY;
-      case "Hard" -> DifficultyLevel.HARD;
-      default -> DifficultyLevel.NORMAL;
-    };
+    if (selected.getText().equals(localizedMessageService.getMessage(SETUP_DIFFICULTY_EASY))) {
+      return DifficultyLevel.EASY;
+    } else if (selected.getText().equals(localizedMessageService.getMessage(SETUP_DIFFICULTY_HARD))) {
+      return DifficultyLevel.HARD;
+    } else {
+      return DifficultyLevel.NORMAL;
+    }
   }
 
   public void setOnStartGame(TriConsumer<String, MapSize, DifficultyLevel> action) {
@@ -262,7 +297,7 @@ public class PlayerSetupScene extends BaseScene {
         selectedDifficultyLevel = getSelectedDifficultyLevel();
         action.accept(playerName, selectedMapSize, selectedDifficultyLevel);
       } else {
-        showAlert("Veuillez saisir un nom valide (1-20 caractères, lettres, chiffres, espaces et traits d'union uniquement).");
+        showAlert(localizedMessageService.getMessage("setup.error.validation.alert"));
       }
     });
   }
@@ -277,7 +312,7 @@ public class PlayerSetupScene extends BaseScene {
 
   private void showAlert(String message) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
-    alert.setTitle("Nom non-autorisé");
+    alert.setTitle(localizedMessageService.getMessage("setup.error.validation.alert.title"));
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.showAndWait();
@@ -285,13 +320,13 @@ public class PlayerSetupScene extends BaseScene {
 
   private String getValidationMessage(String name) {
     if (name.isEmpty()) {
-      return "Name cannot be empty.";
+      return localizedMessageService.getMessage("setup.validation.notEmpty");
     }
     if (name.length() > 20) {
-      return "Name cannot exceed 20 characters.";
+      return localizedMessageService.getMessage("setup.validation.maxLengthExceeded");
     }
     if (!name.matches("^[a-zA-Z0-9 -]+$")) {
-      return "Name can only contain letters, numbers, spaces, and hyphens.";
+      return localizedMessageService.getMessage("setup.validation.regex");
     }
     return ""; // No errors
   }
@@ -300,9 +335,9 @@ public class PlayerSetupScene extends BaseScene {
     scoreBoard.setVisible(true);
     scoreBoard.toggleDisplay();
     if (scoreBoard.isShowing()) {
-      toggleText.setText(HIDE_HIGH_SCORES);
+      toggleText.setText(hideHighScores);
     } else {
-      toggleText.setText(DISPLAY_HIGH_SCORES);
+      toggleText.setText(displayHighScores);
     }
     event.consume();
   }
@@ -324,4 +359,32 @@ public class PlayerSetupScene extends BaseScene {
   }
 
 
+  @Override
+  public void updateLanguage(Locale newLocale) {
+    scoreBoard.updateLanguage(newLocale);
+    updateAllTexts();
+  }
+
+  private void updateAllTexts() {
+    titleLabel.setText(localizedMessageService.getMessage("setup.title"));
+    adventurerNameField.setPromptText(localizedMessageService.getMessage("setup.adventurer.prompt"));
+    startButton.setText(localizedMessageService.getMessage("setup.start.button"));
+    mapSizeLabel.setText((localizedMessageService.getMessage("setup.mapSize.title")));
+    smallMap.setText((localizedMessageService.getMessage(SETUP_MAP_SIZE_SMALL)));
+    mediumMap.setText((localizedMessageService.getMessage("setup.mapSize.medium")));
+    largeMap.setText((localizedMessageService.getMessage(SETUP_MAP_SIZE_LARGE)));
+    smallMapTooltip.setText(localizedMessageService.getMessage("setup.mapSize.small.tooltip"));
+    mediumMapTooltip.setText(localizedMessageService.getMessage("setup.mapSize.medium.tooltip"));
+    largeMapTooltip.setText(localizedMessageService.getMessage("setup.mapSize.large.tooltip"));
+    difficultyModeLabel.setText(localizedMessageService.getMessage("setup.difficulty.title"));
+    easyMode.setText(localizedMessageService.getMessage(SETUP_DIFFICULTY_EASY));
+    mediumMode.setText(localizedMessageService.getMessage("setup.difficulty.normal"));
+    hardMode.setText(localizedMessageService.getMessage(SETUP_DIFFICULTY_HARD));
+    easyModeTooltip.setText(localizedMessageService.getMessage("setup.difficulty.easy.tooltip"));
+    normalModeTooltip.setText(localizedMessageService.getMessage("setup.difficulty.normal.tooltip"));
+    hardModeTooltip.setText(localizedMessageService.getMessage("setup.difficulty.hard.tooltip"));
+    displayHighScores = localizedMessageService.getMessage("highScores.show");
+    hideHighScores = localizedMessageService.getMessage("highScores.hide");
+    toggleText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
+  }
 }

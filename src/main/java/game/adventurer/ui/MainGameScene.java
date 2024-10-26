@@ -3,6 +3,7 @@ package game.adventurer.ui;
 import static game.adventurer.AdventurerGameApp.highScoreManager;
 import static javafx.scene.paint.Color.rgb;
 
+import game.adventurer.common.Localizable;
 import game.adventurer.common.SharedSize;
 import game.adventurer.controller.RightPanelController;
 import game.adventurer.exceptions.InvalidGameStateException;
@@ -13,14 +14,17 @@ import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MoveResult;
+import game.adventurer.service.LocalizationService;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
-import game.adventurer.ui.common.option.CheckboxOption;
 import game.adventurer.ui.common.option.KeyBindingOption;
+import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.ui.common.option.ScoreBoardOption;
 import game.adventurer.util.PathfindingUtil;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import javafx.animation.FadeTransition;
 import javafx.geometry.Insets;
@@ -58,14 +62,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MainGameScene extends BaseScene {
+public class MainGameScene extends BaseScene implements Localizable {
 
   private static final int PADDING = 40;
-  public static final String TREASURE_IS_CLOSE = "Le trésor est proche !";
-  public static final String FAILED_INITIAL_DISTANCE = "Failed to calculate initial distance to treasure. This should never happen.";
-  public static final String MEDIEVAL_FONT = "medieval-font";
   private static final double MESSAGE_BOX_MIN_WIDTH = 230.0;
   private static final double MESSAGE_BOX_MIN_HEIGHT = 250.0;
+  public static final String FAILED_INITIAL_DISTANCE = "Failed to calculate initial distance to treasure. This should never happen.";
+  public static final String MEDIEVAL_FONT = "medieval-font";
   private int initialHealth;
   private GameMap gameMap;
   private Pane mapView;
@@ -99,15 +102,29 @@ public class MainGameScene extends BaseScene {
 
   private ScoreBoard scoreBoard;
   private ScoreBoardOption scoreBoardOption;
+  private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
+  private final LocalizationService localizationService;
+  /*
+  Localizable elements
+   */
+  Text contactPH;
+  Text legalPH;
+  Text aboutUsPH;
+  Text pauseText;
+  LanguageOption languageOption;
+  VBox optionsBox;
+
 
   //V3 pattern Factory
-  private MainGameScene(BorderPane root, SharedSize sharedSize) {
+  private MainGameScene(BorderPane root, SharedSize sharedSize, LocalizationService localizationService) {
     super(root, sharedSize);
+    this.localizationService = localizationService;
   }
 
-  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize, DifficultyLevel difficultyLevel) throws InvalidGameStateException {
+  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize, DifficultyLevel difficultyLevel, LocalizationService localizationService)
+      throws InvalidGameStateException {
     BorderPane root = new BorderPane();
-    MainGameScene scene = new MainGameScene(root, sharedSize);
+    MainGameScene scene = new MainGameScene(root, sharedSize, localizationService);
     scene.gameMap = gameMap;
     scene.difficultyLevel = difficultyLevel;
     scene.initialize();
@@ -178,7 +195,7 @@ public class MainGameScene extends BaseScene {
 
     pauseRectangle = new Rectangle(windowWidth, windowHeight, Color.color(1.0, 1.0, 1.0, 0.3));
     pauseRectangle.setPickOnBounds(false);
-    Text pauseText = new Text("Pause");
+    pauseText = new Text(localizedMessageService.getMessage("mainScene.pause"));
     pauseText.setStyle("-fx-font-size:64px;");
     pauseText.getStyleClass().add(MEDIEVAL_FONT);
     pauseText.setFill(Color.DARKRED);
@@ -220,7 +237,8 @@ public class MainGameScene extends BaseScene {
 
     mapView.requestFocus(); // The map has initial focus
 
-
+    // Register this class as Localizable - done after the localizable texts are set to avoid Null Pointer Exception.
+    localizationService.registerLocalizable(this);
   }
 
   @Override
@@ -267,10 +285,10 @@ public class MainGameScene extends BaseScene {
       return MoveResult.BLOCKED;
     }
     return switch (keyCode) {
-      case KeyCode c when keyCode == bindings.get("Haut") -> gameMap.moveAdventurer(0, -1);
-      case KeyCode c when keyCode == bindings.get("Bas") -> gameMap.moveAdventurer(0, 1);
-      case KeyCode c when keyCode == bindings.get("Gauche") -> gameMap.moveAdventurer(-1, 0);
-      case KeyCode c when keyCode == bindings.get("Droite") -> gameMap.moveAdventurer(1, 0);
+      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.up") -> gameMap.moveAdventurer(0, -1);
+      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.down") -> gameMap.moveAdventurer(0, 1);
+      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.left") -> gameMap.moveAdventurer(-1, 0);
+      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.right") -> gameMap.moveAdventurer(1, 0);
       default -> MoveResult.BLOCKED;
     };
   }
@@ -302,7 +320,7 @@ public class MainGameScene extends BaseScene {
 
   private void handleWoundedMove() {
     showDamageEffect();
-    rightPanelController.addMessage(gameMap.getWoundsList().getLast().getWoundMessage());
+    rightPanelController.addMessage(gameMap.getWoundsList().getLast().getWoundMessageKey());
     if (isAdventurerDead(gameMap.getAdventurer())) {
       if (onGameOver != null) {
         onGameOver.run();
@@ -314,7 +332,7 @@ public class MainGameScene extends BaseScene {
 
   private void handleOutOfBoundsMove() {
     showOutOfBoundsEffect();
-    rightPanelController.addMessage("Vous ne pouvez pas quitter la carte sans le trésor !");
+    rightPanelController.addMessage("mainScene.outOfBoundsMove");
   }
 
   private void handleOtherKeys(KeyEvent event) {
@@ -590,22 +608,21 @@ public class MainGameScene extends BaseScene {
     rightPanel = new VBox(10);
     rightPanel.setPadding(new Insets(10));
 
-    VBox optionsBox = new VBox(5);
+    optionsBox = new VBox(5);
     optionsBox.setAlignment(Pos.TOP_RIGHT);
 
-    CheckboxOption option1 = new CheckboxOption("Option 1", true);
-    CheckboxOption option2 = new CheckboxOption("Option 2", false);
-    scoreBoardOption = new ScoreBoardOption("High Scores", scoreBoard, highScoreManager);
+    scoreBoardOption = new ScoreBoardOption("option.highScores.label", scoreBoard, highScoreManager);
 
     Map<String, KeyCode> defaultMovementBindings = new HashMap<>();
-    defaultMovementBindings.put("Haut", KeyCode.UP);
-    defaultMovementBindings.put("Bas", KeyCode.DOWN);
-    defaultMovementBindings.put("Gauche", KeyCode.LEFT);
-    defaultMovementBindings.put("Droite", KeyCode.RIGHT);
+    defaultMovementBindings.put("option.kb.binding.label.up", KeyCode.UP);
+    defaultMovementBindings.put("option.kb.binding.label.down", KeyCode.DOWN);
+    defaultMovementBindings.put("option.kb.binding.label.left", KeyCode.LEFT);
+    defaultMovementBindings.put("option.kb.binding.label.right", KeyCode.RIGHT);
 
-    movementBindings = new KeyBindingOption("Modifier les touches", defaultMovementBindings);
+    movementBindings = new KeyBindingOption("option.keybinding.label", defaultMovementBindings);
+    languageOption = new LanguageOption(localizedMessageService, localizationService, 18);
 
-    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), option1, option2, scoreBoardOption, movementBindings);
+    options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), languageOption, scoreBoardOption, movementBindings);
     optionsBox.getChildren().add(options);
 
     VBox messagesBox = new VBox(5);
@@ -615,17 +632,21 @@ public class MainGameScene extends BaseScene {
     // Initialize the messages' controller
     rightPanelController.initMessagesBox(messagesBox);
     // Set the first message.
-    String message = "Bonne quête, " + gameMap.getAdventurer().getName() + " !";
     if (difficultyLevel != DifficultyLevel.EASY) {
-      message += "\n" + getTreasureHint(gameMap.getAdventurer(), gameMap.getTreasure());
+      String messageKey = "mainScene.otherModes.startingMessage";
+      String directionHint = getDirectionHint(gameMap.getAdventurer(), gameMap.getTreasure());
+      String distanceHint = getDistanceHint();
+      rightPanelController.addMessage(messageKey, gameMap.getAdventurer().getName(), distanceHint, directionHint);
+    } else {
+      String messageKey = "mainScene.easyMode.startingMessage";
+      rightPanelController.addMessage(messageKey, gameMap.getAdventurer().getName());
     }
-    rightPanelController.addMessage(message);
 
     VBox contactBox = new VBox(5);
     contactBox.setAlignment(Pos.BOTTOM_RIGHT);
-    Text contactPH = new Text("Contact PH");
-    Text legalPH = new Text("Legal PH");
-    Text aboutUsPH = new Text("About Us PH");
+    contactPH = new Text(localizedMessageService.getMessage("mainScene.contact"));
+    legalPH = new Text(localizedMessageService.getMessage("mainScene.legal"));
+    aboutUsPH = new Text(localizedMessageService.getMessage("mainScene.aboutUs"));
     contactBox.getChildren().addAll(aboutUsPH, contactPH, legalPH);
 
     rightPanel.getChildren().addAll(optionsBox, messagesBox, contactBox);
@@ -713,7 +734,7 @@ public class MainGameScene extends BaseScene {
       case DifficultyLevel.NORMAL -> {
         int movesToTreasure = calculateMovesToTreasure();
         if (movesToTreasure <= 3 && !hasSentMessage) {
-          rightPanelController.addMessage(TREASURE_IS_CLOSE);
+          rightPanelController.addMessage("mainScene.treasureIsClose");
           hasSentMessage = true;
         }
         if (movesToTreasure > 3 && hasSentMessage) {
@@ -724,7 +745,7 @@ public class MainGameScene extends BaseScene {
       case DifficultyLevel.HARD -> {
         int movesToTreasure = calculateMovesToTreasure();
         if (movesToTreasure <= 2 && !hasSentMessage) {
-          rightPanelController.addMessage(TREASURE_IS_CLOSE);
+          rightPanelController.addMessage("mainScene.treasureIsClose");
           hasSentMessage = true;
         }
         if (movesToTreasure > 2 && hasSentMessage) {
@@ -736,40 +757,32 @@ public class MainGameScene extends BaseScene {
     }
   }
 
-  private String getTreasureHint(Adventurer adventurer, Treasure treasure) {
-    final String direction = getDirectionString(adventurer, treasure);
-    String distance = "";
+  private String getDistanceHint() {
+
     if ((gameMap.getMapWidth() <= 11 && initialDistanceToTreasure >= 10)
         || (gameMap.getMapWidth() > 11 && gameMap.getMapWidth() < 21 && initialDistanceToTreasure >= 20)
         || (gameMap.getMapWidth() >= 21 && initialDistanceToTreasure >= 30)) {
-      distance = "loin ";
+      return "mainScene.treasureDistanceHint";
     }
-    return String.format("Le trésor devrait être quelque part %svers %s.", distance, direction);
+    return "";
   }
 
-  private static String getDirectionString(Adventurer adventurer, Treasure treasure) {
+  private static String getDirectionHint(Adventurer adventurer, Treasure treasure) {
     int dx = treasure.getTileX() - adventurer.getTileX();
     int dy = treasure.getTileY() - adventurer.getTileY();
-    String direction = "";
-    if (dy > 0) {
-      direction += "le SUD";
-    } else if (dy < 0) {
-      direction += "le NORD";
-    }
-    if (dx > 0) {
-      if (!direction.isEmpty()) {
-        direction += "-EST";
-      } else {
-        direction += "l'EST";
-      }
-    } else if (dx < 0) {
-      if (!direction.isEmpty()) {
-        direction += "-OUEST";
-      } else {
-        direction += "l'OUEST";
-      }
-    }
-    return direction;
+
+    // wanted to use Java 21+ pattern matching, but I can't get it to work, so...
+    return switch (Math.signum(dx) + " " + Math.signum(dy)) {
+      case "0.0 1.0" -> "mainScene.treasureDirectionHintS";
+      case "0.0 -1.0" -> "mainScene.treasureDirectionHintN";
+      case "1.0 0.0" -> "mainScene.treasureDirectionHintE";
+      case "-1.0 0.0" -> "mainScene.treasureDirectionHintW";
+      case "1.0 1.0" -> "mainScene.treasureDirectionHintSE";
+      case "-1.0 1.0" -> "mainScene.treasureDirectionHintSW";
+      case "1.0 -1.0" -> "mainScene.treasureDirectionHintNE";
+      case "-1.0 -1.0" -> "mainScene.treasureDirectionHintNW";
+      default -> "";
+    };
   }
 
   private void togglePause() {
@@ -782,14 +795,24 @@ public class MainGameScene extends BaseScene {
     scoreBoard.setVisible(true);
     scoreBoard.toggleDisplay();
     if (scoreBoard.isShowing()) {
-      scoreBoardOption.getShowScoresLabel().setText("Masquer les scores");
+      scoreBoardOption.getShowScoresLabel().setText(localizedMessageService.getMessage("highScores.hide"));
     } else {
-      scoreBoardOption.getShowScoresLabel().setText("Afficher high scores");
+      scoreBoardOption.getShowScoresLabel().setText(localizedMessageService.getMessage("highScores.show"));
     }
     event.consume();
   }
 
 
+  @Override
+  public void updateLanguage(Locale newLocale) {
+    contactPH.setText(localizedMessageService.getMessage("mainScene.contact"));
+    legalPH.setText(localizedMessageService.getMessage("mainScene.legal"));
+    aboutUsPH.setText(localizedMessageService.getMessage("mainScene.aboutUs"));
+    pauseText.setText(localizedMessageService.getMessage("mainScene.pause"));
+    scoreBoardOption.updateLanguage(newLocale);
+    options.updateLanguage();
+    rightPanelController.updateLanguage(newLocale);
+  }
 }
 
 

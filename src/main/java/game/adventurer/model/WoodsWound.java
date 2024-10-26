@@ -9,17 +9,17 @@ public class WoodsWound extends Wound {
 
   private static final Random RANDOM = new Random();
 
-  private static final String[] DEATH_MESSAGES = {
-      "A force de lacérations par les ronces et autres, vous vous êtes vidé de votre sang.",
-      "C'était la plante empoisonnée de trop ! Vous avez succombé.",
-      "Affaibli par la fatigue et vos nombreuses blessures, vous êtes tombé... en plein sur une branche brisée, sur laquelle vous vous êtes empalé. Une bien vilaine façon de partir. ",
-      "Cette racine traître vous a fait trébucher et votre tête a heurté un rocher... Vous sombrez dans un sommeil dont on ne revient jamais."
+  private static final String[] DEATH_MESSAGES_KEYS = {
+      "lethal.woods.1",
+      "lethal.woods.2",
+      "lethal.woods.3",
+      "lethal.woods.4"
   };
-  private static final String[] NON_LETHAL_MESSAGES = {
-      "Aïe ! Ces ronces acérées vous ont salement griffé.",
-      "Vous n'auriez pas dû essayer de traverser ces buissons épineux... Vous saignez.",
-      "La peau vous brûle depuis que vous avez touché ces plantes qui vous barrent la route.",
-      "Les branches basses vous fouettent violemment. On dirait que ces arbres... bougent ?"
+  private static final String[] NON_LETHAL_MESSAGES_KEYS = {
+      "wound.woods.1",
+      "wound.woods.2",
+      "wound.woods.3",
+      "wound.woods.4"
   };
 
 
@@ -30,11 +30,11 @@ public class WoodsWound extends Wound {
 
   public void setWoundsMessage(Creature creature) {
     if (isFatal(creature)) {
-      int index = RANDOM.nextInt(DEATH_MESSAGES.length);
-      this.woundMessage = DEATH_MESSAGES[index];
+      int index = RANDOM.nextInt(DEATH_MESSAGES_KEYS.length);
+      this.woundMessageKey = DEATH_MESSAGES_KEYS[index];
     } else {
-      int index = RANDOM.nextInt(NON_LETHAL_MESSAGES.length);
-      this.woundMessage = NON_LETHAL_MESSAGES[index];
+      int index = RANDOM.nextInt(NON_LETHAL_MESSAGES_KEYS.length);
+      this.woundMessageKey = NON_LETHAL_MESSAGES_KEYS[index];
     }
   }
 }

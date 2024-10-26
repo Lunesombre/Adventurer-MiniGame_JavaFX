@@ -12,7 +12,7 @@ public abstract class Wound {
   protected WoundCause cause;
   @Setter
   protected int healthCost;
-  protected String woundMessage;
+  protected String woundMessageKey;
 
   protected Wound(WoundCause cause, int healthCost) {
     this.cause = cause;
@@ -31,7 +31,7 @@ public abstract class Wound {
   public String toString() {
     return "Wound{" +
         "cause=" + cause +
-        ", woundMessage='" + (woundMessage == null ? "null" : woundMessage) + '\'' +
+        ", woundMessageKey='" + (woundMessageKey == null ? "null" : woundMessageKey) + '\'' +
         '}';
   }
 }

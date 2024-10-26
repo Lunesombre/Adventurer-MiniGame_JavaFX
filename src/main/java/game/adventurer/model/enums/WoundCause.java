@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum WoundCause {
-  WOODS("Bois infranchissables"),
-  MONSTER("Monstre");
+  WOODS("wound.cause.woods"),
+  MONSTER("wound.cause.monster");
 
-  private final String causeName;
+  private final String causeNameKey;
 
-  WoundCause(String causeName) {
-    this.causeName = causeName;
+  WoundCause(String causeNameKey) {
+    this.causeNameKey = causeNameKey;
   }
 }
