@@ -34,8 +34,12 @@ public class HighScoreManager {
 
   public HighScoreManager() {
     String userHome = System.getProperty("user.home");
-    this.filePath = Paths.get(userHome, ".adventurer", FILE_NAME).toString();
-    initializeDirectory();
+    Path directory = Paths.get(userHome, ".adventurer");
+    this.filePath = directory.resolve(FILE_NAME).toString();
+    boolean directoryInitialized = directoryInitializer(directory);
+    if (!directoryInitialized) {
+      log.warn("Cannot create the directory for highScores, new highScores won't be kept when application is shut down");
+    }
     highScores = new ArrayList<>();
     loadScores();
     if (highScores.isEmpty()) {
@@ -43,12 +47,17 @@ public class HighScoreManager {
     }
   }
 
-  private void initializeDirectory() {
-    File directory = new File(Paths.get(System.getProperty("user.home"), ".adventurer").toString());
-    if (!directory.exists()) {
-      log.info("Création du répertoire des HighScores");
-      directory.mkdirs();
+  private boolean directoryInitializer(Path directory) {
+    if (Files.notExists(directory)) {
+      try {
+        Files.createDirectories(directory);
+        return true;
+      } catch (IOException e) {
+        log.error("Failed to create directory: {} ", directory, e);
+        return false;
+      }
     }
+    return true;
   }
 
   public void addScore(Score score) {
@@ -67,9 +76,10 @@ public class HighScoreManager {
         writer.newLine();
       }
     } catch (IOException e) {
-      log.error("Erreur lors de la sauvegarde des scores : {}", e.getMessage());
+      log.error("Error on saving scores : {}", e.getMessage(), e);
     }
   }
+
 
   private void loadScores() {
     File file = new File(filePath);
@@ -85,7 +95,7 @@ public class HighScoreManager {
       Collections.sort(highScores);
 
     } catch (IOException e) {
-      log.warn("Erreur lors du chargement des scores : {}", e.getMessage());
+      log.warn("Error on loading scores : {}. Initializing with default scores.", e.getMessage(), e);
       initializeWithDefaultScores();
     }
   }
@@ -95,6 +105,7 @@ public class HighScoreManager {
   }
 
   private void initializeWithDefaultScores() {
+    highScores.clear();
     highScores.addAll(Arrays.asList(defaultScores));
     Collections.sort(highScores);
     saveScores();
