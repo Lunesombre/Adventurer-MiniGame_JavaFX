@@ -32,8 +32,14 @@ public class Score implements Comparable<Score> {
     if (scoreComparison != 0) {
       return scoreComparison;
     }
-    // if scores are equals, fewer moves is considered better
-    return Integer.compare(this.movesCount, other.movesCount);
+    // If scores are equal, compare moves (fewer is better)
+    int movesComparison = Integer.compare(this.movesCount, other.movesCount);
+    if (movesComparison != 0) {
+      return movesComparison;
+    }
+
+    // If moves are also equal, compare dates (older is better)
+    return this.date.compareTo(other.date);
   }
 
 
