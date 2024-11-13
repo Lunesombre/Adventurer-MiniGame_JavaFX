@@ -1,12 +1,17 @@
 package game.adventurer.model;
 
+import static game.adventurer.util.MiscUtil.handleInvalidGameState;
+
+import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.base.Creature;
 import game.adventurer.model.base.Wound;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.model.enums.WoundCause;
+import game.adventurer.service.LocalizedMessageService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -35,6 +40,15 @@ public class GameMap {
   }
 
   public MoveResult moveAdventurer(int dx, int dy) {
+    try {
+      if (isOutOfMapBounds(adventurer.getTileX(), adventurer.getTileY())) {
+        LOG.error("Adventurer's current coordinates ({}, {}) are invalid!",
+            adventurer.getTileX(), adventurer.getTileY());
+        throw new InvalidGameStateException(LocalizedMessageService.getInstance().getMessage("error.impossibleAdventurerLocation"));
+      }
+    } catch (InvalidGameStateException e) {
+      handleInvalidGameState(getClass(), e);
+    }
     int newX = adventurer.getTileX() + dx;
     int newY = adventurer.getTileY() + dy;
 
@@ -46,13 +60,11 @@ public class GameMap {
 
     // Then, check if it's a valid move within the map.
     if (!isValidMove(newX, newY, adventurer)) {
-      // Si le mouvement n'est pas valide, vérifier si c'est à cause d'une case de type WOOD
+      // If move ain't valid, verifies if it's because of a Type.WOOD Tile
       if (grid[newY][newX].getType() == Type.WOOD) {
         WoodsWound wound = new WoodsWound(WoundCause.WOODS);
         wound.setWoundsMessage(adventurer);
         adventurer.setHealth(adventurer.getHealth() - wound.getHealthCost());
-        LOG.debug("Blessure : {}", wound.getWoundMessageKey());
-        LOG.debug("PV de {} : {}", adventurer.getName(), adventurer.getHealth());
         woundsList.add(wound);
         return MoveResult.WOUNDED;
       } else {
@@ -72,7 +84,7 @@ public class GameMap {
   private boolean isValidMove(int x, int y, Creature creature) {
     switch (creature) {
       case Adventurer ignored -> {
-        return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight && grid[y][x].getType() == Type.PATH;
+        return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight && getTileTypeAt(x, y) == Type.PATH;
       }
       case Monster ignored -> {
         return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
@@ -88,7 +100,7 @@ public class GameMap {
   }
 
   public Type getTileTypeAt(int x, int y) {
-    return grid[y][x].getType();
+    return Objects.requireNonNull(grid[y][x].getType(), "Tile type cannot be null");
   }
 
 }
