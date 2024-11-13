@@ -285,10 +285,10 @@ public class MainGameScene extends BaseScene implements Localizable {
       return MoveResult.BLOCKED;
     }
     return switch (keyCode) {
-      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.up") -> gameMap.moveAdventurer(0, -1);
-      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.down") -> gameMap.moveAdventurer(0, 1);
-      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.left") -> gameMap.moveAdventurer(-1, 0);
-      case KeyCode c when keyCode == bindings.get("option.kb.binding.label.right") -> gameMap.moveAdventurer(1, 0);
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.up") -> gameMap.moveAdventurer(0, -1);
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.down") -> gameMap.moveAdventurer(0, 1);
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.left") -> gameMap.moveAdventurer(-1, 0);
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.right") -> gameMap.moveAdventurer(1, 0);
       default -> MoveResult.BLOCKED;
     };
   }
