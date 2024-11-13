@@ -1,7 +1,9 @@
 package game.adventurer.util;
 
 import game.adventurer.config.AppConfig;
+import game.adventurer.exceptions.InvalidGameStateException;
 import java.util.Objects;
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -94,5 +96,20 @@ public class MiscUtil {
     }
     // Add other Node types as necessary
     throw new RuntimeException("Type of Node not yet supported");
+  }
+
+  public static void handleInvalidGameState(Class<?> clazz, InvalidGameStateException e) {
+    Platform.runLater(() -> {
+      // Initialize the alert
+      Alert alert = alertInitializer(clazz, AlertType.ERROR, "Critical Error", "Error: " + e.getMessage(), "alert",
+          "/assets/icons/crane-et-os.png", true);
+
+      // Defines alert content (OK button is created by the AlertType.ERROR)
+      alert.setContentText("The game cannot continue due to an invalid state. Game will close upon closing this alert.");
+
+      alert.showAndWait();
+      Platform.exit(); // Clean exit
+      System.exit(0);
+    });
   }
 }

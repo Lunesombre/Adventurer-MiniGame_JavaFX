@@ -1,7 +1,7 @@
 package game.adventurer;
 
 import static game.adventurer.ui.common.SceneTransitionsManager.crossFadeTransition;
-import static game.adventurer.util.MiscUtil.alertInitializer;
+import static game.adventurer.util.MiscUtil.handleInvalidGameState;
 
 import game.adventurer.common.SharedSize;
 import game.adventurer.exceptions.InvalidGameStateException;
@@ -11,7 +11,6 @@ import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.service.LocalizationService;
-import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.service.MapGenerator;
 import game.adventurer.ui.EndGameScene;
 import game.adventurer.ui.GameOverScene;
@@ -22,8 +21,6 @@ import game.adventurer.util.ScreenUtils;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -40,7 +37,6 @@ public class AdventurerGameApp extends Application {
   private static final String APP_NAME = "Adventurer Game";
   public static final HighScoreManager highScoreManager = new HighScoreManager();
   private static ConfigurableApplicationContext springContext;
-  private LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
   private LocalizationService localizationService;
 
 
@@ -115,7 +111,7 @@ public class AdventurerGameApp extends Application {
     } catch (NoValidRangeException e) {
       log.error(e.getMessage(), e);
     } catch (InvalidGameStateException e) {
-      handleInvalidGameState(e);
+      handleInvalidGameState(getClass(), e);
     }
   }
 
@@ -136,20 +132,6 @@ public class AdventurerGameApp extends Application {
   private void quitGame() {
     Platform.exit(); // Clean exit
     System.exit(0); // Even cleaner if background threads running or resources to free
-  }
-
-  private void handleInvalidGameState(InvalidGameStateException e) {
-    Platform.runLater(() -> {
-      // Initialize the alert
-      Alert alert = alertInitializer(getClass(), AlertType.ERROR, "Critical Error", "Error: " + e.getMessage(), "alert",
-          "/assets/icons/crane-et-os.png", true);
-
-      // Defines alert content (OK button is created by the AlertType.ERROR)
-      alert.setContentText("The game cannot continue due to an invalid state. Game will close upon closing this alert.");
-
-      alert.showAndWait();
-      quitGame();
-    });
   }
 
 
