@@ -4,21 +4,18 @@ package game.adventurer.ui.common.option;
 import java.util.function.Consumer;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
+import lombok.Getter;
 
 public class CheckboxOption implements Option<Boolean> {
 
-  private final String name;
+  @Getter
+  private final String nameKey;
   private final CheckBox checkBox;
 
-  public CheckboxOption(String name, boolean initialValue) {
-    this.name = name;
+  public CheckboxOption(String nameKey, boolean initialValue) {
+    this.nameKey = nameKey;
     this.checkBox = new CheckBox();
     this.checkBox.setSelected(initialValue);
-  }
-
-  @Override
-  public String getName() {
-    return name;
   }
 
   @Override

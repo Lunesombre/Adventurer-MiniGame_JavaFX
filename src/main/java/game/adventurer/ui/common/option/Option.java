@@ -5,7 +5,7 @@ import javafx.scene.Node;
 
 public interface Option<T> {
 
-  String getName();
+  String getNameKey();
 
   Node getNode();
 

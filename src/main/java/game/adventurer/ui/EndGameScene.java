@@ -3,10 +3,11 @@ package game.adventurer.ui;
 import game.adventurer.common.SharedSize;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Score;
-import game.adventurer.model.Tile;
+import game.adventurer.model.Tile.Type;
 import game.adventurer.model.TreasureItem;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.service.HighScoreManager;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.ScoreBoard;
 import java.time.LocalDateTime;
@@ -41,15 +42,17 @@ public class EndGameScene extends BaseScene {
   private final DifficultyLevel difficultyLevel;
   private final double initialDistanceToTreasure;
 
-  public static final String RESTART_BUTTON_LABEL = "Rejouer";
-  public static final String QUIT_BUTTON_LABEL = "Quitter jeu";
-  private final Button quitButton = new Button(QUIT_BUTTON_LABEL);
-  private final Button restartButton = new Button(RESTART_BUTTON_LABEL);
+  public final String restartButtonLabel;
+  public final String quitButtonLabel;
+  private final Button quitButton;
+  private final Button restartButton;
   @Getter
   private Score newScore;
   private final HighScoreManager highScoreManager;
   private ScoreBoard scoreBoard;
   private Text toggleScoreBoardText;
+
+  private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
 
   public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure,
       HighScoreManager highScoreManager) {
@@ -59,8 +62,12 @@ public class EndGameScene extends BaseScene {
     this.difficultyLevel = difficultyLevel;
     this.initialDistanceToTreasure = initialDistanceToTreasure;
     this.highScoreManager = highScoreManager;
-
+    this.restartButtonLabel = localizedMessageService.getMessage("button.replay");
+    this.quitButtonLabel = localizedMessageService.getMessage("button.exit");
+    quitButton = new Button(quitButtonLabel);
+    restartButton = new Button(restartButtonLabel);
     initialize();
+
   }
 
 
@@ -90,16 +97,16 @@ public class EndGameScene extends BaseScene {
     newScore = new Score(gameMap.getAdventurer().getName(), calculatedScore, LocalDateTime.now(), movesCount, difficultyLevel);
     highScoreManager.addScore(newScore);
 
-    Label congratsLabel = new Label("Félicitations " + gameMap.getAdventurer().getName() + " !");
+    Label congratsLabel = new Label(localizedMessageService.getMessage("endgame.greeting", gameMap.getAdventurer().getName()));
     congratsLabel.setStyle("-fx-text-fill: gold; -fx-font-size: 40px; -fx-font-weight: bold;");
     congratsLabel.setPadding(new Insets(20.0));
 
-    Label movesLabel = new Label("Nombre de mouvements : " + movesCount);
+    Label movesLabel = new Label(localizedMessageService.getMessage("endgame.moveCount", movesCount));
     movesLabel.setPadding(new Insets(20.0));
 
     TextFlow treasureFlow = getTreasureFlow(gameMap.getTreasure().getItem());
 
-    Label scoreLabel = new Label("Score : " + calculatedScore);
+    Label scoreLabel = new Label(localizedMessageService.getMessage("endgame.score", calculatedScore));
     scoreLabel.setPadding(new Insets(20.0));
 
     HBox buttonsBox = new HBox(20);
@@ -110,7 +117,7 @@ public class EndGameScene extends BaseScene {
     //ScoreBoard
     scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
     // scoreBoardText
-    toggleScoreBoardText = new Text("Afficher les meilleurs scores");
+    toggleScoreBoardText = new Text(localizedMessageService.getMessage("highScores.show"));
     toggleScoreBoardText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
     toggleScoreBoardText.setOnMouseClicked(this::toggleScoreBoard);
     toggleScoreBoardText.setOnMouseEntered(e -> toggleScoreBoardText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
@@ -143,17 +150,17 @@ public class EndGameScene extends BaseScene {
     scoreBoard.setVisible(true);
     scoreBoard.toggleDisplay();
     if (scoreBoard.isShowing()) {
-      toggleScoreBoardText.setText("Masquer les meilleurs scores");
+      toggleScoreBoardText.setText(localizedMessageService.getMessage("highScores.hide"));
     } else {
-      toggleScoreBoardText.setText("Afficher les meilleurs scores");
+      toggleScoreBoardText.setText(localizedMessageService.getMessage("highScores.show"));
     }
     event.consume();
   }
 
   private TextFlow getTreasureFlow(TreasureItem treasureItem) {
-    String treasureName = treasureItem.getName();
+    String treasureName = localizedMessageService.getMessage(treasureItem.getNameKey());
     String treasureGlowColor = treasureItem.getGlowColor();
-    Text prefixText = new Text("Trésor trouvé : ");
+    Text prefixText = new Text(localizedMessageService.getMessage("endgame.treasure"));
     Text treasureText = new Text(treasureName);
     treasureText.setStyle("-fx-font-weight: bold; -fx-fill: " + treasureGlowColor + ";");
     Bloom bloom = new Bloom();
@@ -196,7 +203,7 @@ public class EndGameScene extends BaseScene {
     int count = 0;
     for (int y = 0; y < gameMap.getMapHeight(); y++) {
       for (int x = 0; x < gameMap.getMapWidth(); x++) {
-        if (gameMap.getTileTypeAt(x, y) != Tile.Type.PATH) {
+        if (gameMap.getTileTypeAt(x, y) != Type.PATH) {
           count++;
         }
       }

@@ -1,5 +1,6 @@
 package game.adventurer.ui.common;
 
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.option.Option;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
 import javafx.scene.image.Image;
@@ -36,6 +38,7 @@ public class OptionsPanel extends StackPane {
   @Getter
   private boolean isShowing = false;
   private final List<Consumer<Boolean>> toggleListeners = new ArrayList<>();
+  private final LocalizedMessageService messageService = LocalizedMessageService.getInstance();
 
   public OptionsPanel(double sceneWidth, double sceneHeight, Option<?>... options) {
     // Icon
@@ -60,23 +63,28 @@ public class OptionsPanel extends StackPane {
     optionsContent.setMaxHeight(sceneHeight);
 
     // Options placeholders at first
-    Label optionsLabel = new Label("Options");
+    Label optionsLabel = new Label(messageService.getMessage("option.panel.label"));
     optionsLabel.setStyle("-fx-padding: 0 0 10px 0;");
     optionsLabel.setTextFill(Color.WHITE);
+    optionsLabel.setUserData("option.panel.label"); // stores the message key to retrieve the localized message on Locale changes
     optionsContent.getChildren().add(optionsLabel);
     if (options.length == 0) {
-      Label noOption = new Label("Aucune option disponible");
+      Label noOption = new Label(messageService.getMessage("option.panel.noOptions"));
+      noOption.setUserData("option.panel.noOptions"); // stores the message key to retrieve the localized message on Locale changes
       optionsContent.getChildren().add(noOption);
     } else {
       for (Option<?> option : options) {
         HBox optionLine;
         if (option.getNode() instanceof TitledPane titledPane) {
-          // don't add the Label in the HBox, the name's already on the titledPane
+          // don't add the Label in the HBox, the nameKey's already on the titledPane
           log.debug(titledPane.toString());
           titledPane.setMaxHeight(100);
+          titledPane.setText(messageService.getMessage(option.getNameKey()));
+          titledPane.setUserData(option.getNameKey());
           optionLine = new HBox(15, titledPane);
         } else {
-          Label optionLabel = new Label(option.getName());
+          Label optionLabel = new Label(messageService.getMessage(option.getNameKey()));
+          optionLabel.setUserData(option.getNameKey());
           optionLabel.setStyle("-fx-font-weight: bold;");
           optionLabel.setMaxHeight(100);
           log.debug(option.getNode().toString());
@@ -88,7 +96,7 @@ public class OptionsPanel extends StackPane {
 
         optionsContent.getChildren().add(optionLine);
 
-        option.onValueChange(value -> log.info("Option '{}' changed to: {}", option.getName(), value));
+        option.onValueChange(value -> log.info("Option '{}' changed to: {}", option.getNameKey(), value));
       }
     }
 
@@ -172,6 +180,29 @@ public class OptionsPanel extends StackPane {
 
   public void removeToggleListener(Consumer<Boolean> listener) {
     toggleListeners.remove(listener);
+  }
+
+
+  public void updateLanguage() {
+    for (Node node : optionsContent.getChildren()) {
+      if (node instanceof HBox optionLine) {
+        for (Node optionNode : optionLine.getChildren()) {
+          if (optionNode instanceof Label label) {
+            // Updates Option's label
+            String key = (String) label.getUserData();
+            if (key != null) {
+              label.setText(messageService.getMessage(key));
+            }
+          } else if (optionNode instanceof TitledPane titledPane) {
+            // Updates TitlePane's label
+            String key = (String) titledPane.getUserData();
+            if (key != null) {
+              titledPane.setText(messageService.getMessage(key));
+            }
+          }
+        }
+      }
+    }
   }
 
 

@@ -2,10 +2,12 @@ package game.adventurer.util;
 
 import game.adventurer.config.AppConfig;
 import java.util.Objects;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
@@ -79,5 +81,18 @@ public class MiscUtil {
     }
 
     return alert;
+  }
+
+  public static Node copyNode(Node original) {
+    if (original instanceof ImageView originalImageView) {
+      return new ImageView(originalImageView.getImage());
+    } else if (original instanceof Label originalLabel) {
+      Label newLabel = new Label(originalLabel.getText());
+      newLabel.setGraphic(originalLabel.getGraphic()); // Keep the graphic
+      newLabel.setStyle(originalLabel.getStyle()); // Keep the style
+      return newLabel;
+    }
+    // Add other Node types as necessary
+    throw new RuntimeException("Type of Node not yet supported");
   }
 }

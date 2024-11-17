@@ -18,7 +18,7 @@ public class Treasure {
   @Override
   public String toString() {
     return "Treasure{" +
-        "item=" + item.getName() +
+        "item=" + item.getNameKey() +
         ", tileX=" + tileX +
         ", tileY=" + tileY +
         '}';

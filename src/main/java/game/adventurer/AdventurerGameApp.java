@@ -10,6 +10,8 @@ import game.adventurer.model.GameMap;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.MapSize;
 import game.adventurer.service.HighScoreManager;
+import game.adventurer.service.LocalizationService;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.service.MapGenerator;
 import game.adventurer.ui.EndGameScene;
 import game.adventurer.ui.GameOverScene;
@@ -26,6 +28,7 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ConfigurableApplicationContext;
 
 @Slf4j
 public class AdventurerGameApp extends Application {
@@ -36,6 +39,24 @@ public class AdventurerGameApp extends Application {
   private static final float INITIAL_SCREEN_SIZE_RATIO = 0.8f;
   private static final String APP_NAME = "Adventurer Game";
   public static final HighScoreManager highScoreManager = new HighScoreManager();
+  private static ConfigurableApplicationContext springContext;
+  private LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
+  private LocalizationService localizationService;
+
+
+  public static void launchWithSpringContext(String[] args, ConfigurableApplicationContext context) {
+    springContext = context;
+    launch(args);
+  }
+
+  @Override
+  public void init() {
+    // AdventurerGameApp needs an empty constructor
+    // This gets the necessary services from Spring context
+    localizationService = springContext.getBean(LocalizationService.class);
+    // Init other services here as needed
+  }
+
 
   @Override
   public void start(Stage primaryStage) {
@@ -67,7 +88,7 @@ public class AdventurerGameApp extends Application {
     PauseTransition initialDelay = new PauseTransition(Duration.seconds(2));
     initialDelay.setOnFinished(event -> {
       // Creating next scene
-      PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager);
+      PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager, localizationService);
       playerSetupScene.setOnStartGame(this::startGame);
 
       // Cross-fade transition to playerSetupScene
@@ -77,7 +98,7 @@ public class AdventurerGameApp extends Application {
   }
 
   private void showPlayerSetup() {
-    PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager);
+    PlayerSetupScene playerSetupScene = new PlayerSetupScene(sharedSize, highScoreManager, localizationService);
     playerSetupScene.setOnStartGame(this::startGame);
     primaryStage.setScene(playerSetupScene);
   }
@@ -85,7 +106,7 @@ public class AdventurerGameApp extends Application {
   private void startGame(String playerName, MapSize mapSize, DifficultyLevel difficultyLevel) {
     try {
       GameMap gameMap = MapGenerator.generateMap(mapSize.getSize(), mapSize.getSize(), playerName);
-      MainGameScene mainGameScene = MainGameScene.create(gameMap, sharedSize, difficultyLevel);
+      MainGameScene mainGameScene = MainGameScene.create(gameMap, sharedSize, difficultyLevel, localizationService);
       mainGameScene.setOnGameEnd(() -> showEndGame(gameMap, mainGameScene.getMovesCount(), mainGameScene.getDifficultyLevel(),
           mainGameScene.getInitialDistanceToTreasure()));
       mainGameScene.setOnGameOver(() -> showGameOver(gameMap));

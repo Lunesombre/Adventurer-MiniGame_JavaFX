@@ -2,8 +2,11 @@ package game.adventurer.ui.common.option;
 
 import static game.adventurer.util.MiscUtil.alertInitializer;
 
+import game.adventurer.common.Localizable;
 import game.adventurer.service.HighScoreManager;
+import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.ScoreBoard;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.scene.Node;
@@ -17,20 +20,25 @@ import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
 
-public class ScoreBoardOption implements Option<Void> {
+public class ScoreBoardOption implements Option<Void>, Localizable {
 
+  public static final String HIGH_SCORES_RESET_KEY = "option.highScores.reset";
+  public static final String HIGH_SCORES_SHOW_KEY = "highScores.show";
+  public static final String HIGH_SCORES_HIDE_KEY = "highScores.hide";
   @Getter
-  private final String name;
+  private final String nameKey;
   private final VBox content;
   private final ScoreBoard scoreBoard;
   private final TitledPane titledPane;
   private final HighScoreManager highScoreManager;
+  private final LocalizedMessageService messageService = LocalizedMessageService.getInstance();
   @Getter
   @Setter
   private Label showScoresLabel;
+  private Label resetScoresLabel;
 
-  public ScoreBoardOption(String name, ScoreBoard scoreBoard, HighScoreManager highScoreManager) {
-    this.name = name;
+  public ScoreBoardOption(String nameKey, ScoreBoard scoreBoard, HighScoreManager highScoreManager) {
+    this.nameKey = nameKey;
     this.titledPane = new TitledPane();
     this.content = new VBox(10);
     this.scoreBoard = scoreBoard;
@@ -39,20 +47,20 @@ public class ScoreBoardOption implements Option<Void> {
   }
 
   private void setupLayout() {
-    titledPane.setText(name);
+    titledPane.setText(nameKey);
     titledPane.getStyleClass().add("option-titled-pane");
-    showScoresLabel = new Label("Afficher les high scores");
+    showScoresLabel = new Label(messageService.getMessage(HIGH_SCORES_SHOW_KEY));
     showScoresLabel.setStyle("-fx-cursor: hand;");
     showScoresLabel.setOnMouseClicked(e -> {
       scoreBoard.toggleDisplay();
       if (scoreBoard.isShowing()) {
-        showScoresLabel.setText("Masquer les scores");
+        showScoresLabel.setText(messageService.getMessage(HIGH_SCORES_HIDE_KEY));
       } else {
-        showScoresLabel.setText("Afficher les high scores");
+        showScoresLabel.setText(messageService.getMessage(HIGH_SCORES_SHOW_KEY));
       }
     });
 
-    Label resetScoresLabel = new Label("Réinitialiser les high scores");
+    resetScoresLabel = new Label(messageService.getMessage(HIGH_SCORES_RESET_KEY));
     resetScoresLabel.setStyle("-fx-cursor: hand;");
     resetScoresLabel.setOnMouseClicked(e -> showResetConfirmation());
 
@@ -64,20 +72,20 @@ public class ScoreBoardOption implements Option<Void> {
 
   private void showResetConfirmation() {
     // Initialize the alert
-    Alert alert = alertInitializer(getClass(), AlertType.CONFIRMATION, "Réinitialiser les High Scores",
-        "Êtes-vous sûr de vouloir réinitialiser les high scores ?", "reset-high-scores-alert", "/assets/icons/warning.png", true);
+    Alert alert = alertInitializer(getClass(), AlertType.CONFIRMATION, messageService.getMessage(HIGH_SCORES_RESET_KEY),
+        messageService.getMessage("option.highScores.reset.confirm.header"), "reset-high-scores-alert", "/assets/icons/warning.png", true);
 
     // Defines alert content (buttons are created by the AlertType.CONFIRMATION)
-    alert.setContentText("Cette action est irréversible !");
+    alert.setContentText(messageService.getMessage("option.highScores.reset.confirm.body"));
 
     // Buttons text and styles
     alert.getButtonTypes().forEach(buttonType -> {
       Button button = (Button) alert.getDialogPane().lookupButton(buttonType);
       if (buttonType == ButtonType.OK) {
-        button.setText("Valider");
+        button.setText(messageService.getMessage("button.validate"));
         button.getStyleClass().add("reset-confirm-button");
       } else if (buttonType == ButtonType.CANCEL) {
-        button.setText("Annuler");
+        button.setText(messageService.getMessage("button.cancel"));
         button.getStyleClass().add("reset-cancel-button");
       }
     });
@@ -110,6 +118,17 @@ public class ScoreBoardOption implements Option<Void> {
       if (node instanceof Label label) {
         label.setStyle(label.getStyle() + fontStyle);
       }
+    }
+  }
+
+  @Override
+  public void updateLanguage(Locale newLocale) {
+    resetScoresLabel.setText(messageService.getMessage(HIGH_SCORES_RESET_KEY));
+    scoreBoard.updateLanguage(newLocale);
+    if (scoreBoard.isShowing()) {
+      showScoresLabel.setText(messageService.getMessage(HIGH_SCORES_HIDE_KEY));
+    } else {
+      showScoresLabel.setText(messageService.getMessage(HIGH_SCORES_SHOW_KEY));
     }
   }
 }

@@ -3,6 +3,7 @@ package game.adventurer.ui.common.option;
 import static game.adventurer.util.MiscUtil.alertInitializer;
 import static game.adventurer.util.MiscUtil.applyGlobalCss;
 
+import game.adventurer.service.LocalizedMessageService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,21 +28,24 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import lombok.Setter;
 
 public class KeyBindingOption implements Option<Map<String, KeyCode>> {
 
-  private final String name;
+  @Setter
+  private String nameKey;
   private final Map<String, KeyCode> bindings;
   private final Button openDialogButton;
   private Consumer<Map<String, KeyCode>> changeListener;
   private final List<KeyCode> forbiddenKeys = List.of(KeyCode.SPACE, KeyCode.ESCAPE, KeyCode.ENTER);
   private Map<String, KeyCode> tempBindings;
+  private final LocalizedMessageService messageService = LocalizedMessageService.getInstance();
 
 
-  public KeyBindingOption(String name, Map<String, KeyCode> defaultBindings) {
-    this.name = name;
+  public KeyBindingOption(String nameKey, Map<String, KeyCode> defaultBindings) {
+    this.nameKey = !nameKey.isBlank() ? nameKey : "option.keybinding.label";
     this.bindings = new HashMap<>(defaultBindings);
-    this.openDialogButton = new Button("Rebind");
+    this.openDialogButton = new Button(messageService.getMessage("option.keybinding.button.open"));
     setupLayout();
   }
 
@@ -52,8 +56,9 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
 
   private void showKeyBindingDialog() {
     tempBindings = new HashMap<>(bindings);
-
-    Alert alert = alertInitializer(getClass(), null, "Configuration des touches", "Modifiez les touches de jeu", "keybinding-alert",
+    String title = messageService.getMessage("option.keybinding.alert.title");
+    String headerText = messageService.getMessage("option.keybinding.alert.header");
+    Alert alert = alertInitializer(getClass(), null, title, headerText, "keybinding-alert",
         "/assets/icons/cycle.png", false);
 
     GridPane grid = new GridPane();
@@ -64,7 +69,8 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
 
     int row = 0;
     for (Map.Entry<String, KeyCode> entry : tempBindings.entrySet()) {
-      Label actionLabel = new Label(entry.getKey() + " :");
+      String entryKeyLabel = messageService.getMessage(entry.getKey());
+      Label actionLabel = new Label(messageService.getMessage("option.kb.alert.action.label", entryKeyLabel));
       TextField keyField = new TextField(entry.getValue().getName());
       keyField.setEditable(false);
       final Button changeButton = getChangeButton(entry, keyField);
@@ -80,10 +86,10 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
     alert.getButtonTypes().forEach(buttonType -> {
       Button button = (Button) alert.getDialogPane().lookupButton(buttonType);
       if (buttonType == ButtonType.OK) {
-        button.setText("Valider");
+        button.setText(messageService.getMessage("button.validate"));
         button.getStyleClass().add("confirm-button");
       } else if (buttonType == ButtonType.CANCEL) {
-        button.setText("Annuler");
+        button.setText(messageService.getMessage("button.cancel"));
         button.getStyleClass().add("cancel-button");
       }
     });
@@ -100,15 +106,16 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
   }
 
   private Button getChangeButton(Entry<String, KeyCode> entry, TextField keyField) {
-    Button changeButton = new Button("Changer");
+    Button changeButton = new Button(messageService.getMessage("option.keybinding.alert.button"));
     changeButton.setOnAction(e -> {
       Stage dialog = new Stage();
       dialog.initModality(Modality.APPLICATION_MODAL);
-      dialog.setTitle("Appuyez sur une touche");
+      dialog.setTitle(messageService.getMessage("option.keybinding.alert.dialog.title"));
       dialog.setResizable(false);
       Image icon = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/assets/icons/cycle.png")));
       dialog.getIcons().add(icon);
-      Text promptText = new Text("Appuyez sur la nouvelle touche pour " + entry.getKey());
+      String entryKeyLabel = messageService.getMessage(entry.getKey());
+      Text promptText = new Text(messageService.getMessage("option.kb.alert.dialog.prompt", entryKeyLabel));
       VBox textBox = new VBox(20, promptText);
       textBox.getStyleClass().add("keybinding-prompt");
       textBox.setAlignment(Pos.CENTER);
@@ -118,9 +125,11 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
       dialogScene.setOnKeyPressed(event -> {
         KeyCode newKey = event.getCode();
         if (forbiddenKeys.contains(newKey)) {
-          showErrorAlert("Touche interdite", "Cette touche est assignée à une autre action, non modifiable.");
+          showErrorAlert(messageService.getMessage("option.kb.alert.error.forbidden.title"),
+              messageService.getMessage("option.kb.alert.error.forbidden.content"));
         } else if (isKeyAlreadyUsed(newKey, entry.getKey(), tempBindings)) {
-          showErrorAlert("Touche déjà utilisée", "Cette touche est déjà assignée à une autre action.");
+          showErrorAlert(messageService.getMessage("option.kb.alert.error.alreadyUsed.title"),
+              messageService.getMessage("option.kb.alert.error.alreadyUsed.content"));
         } else {
           keyField.setText(newKey.getName());
           tempBindings.put(entry.getKey(), newKey);
@@ -135,8 +144,8 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
   }
 
   @Override
-  public String getName() {
-    return name;
+  public String getNameKey() {
+    return nameKey;
   }
 
   @Override
