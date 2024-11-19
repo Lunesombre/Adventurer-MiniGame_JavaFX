@@ -134,6 +134,7 @@ class GameMapTest {
     // GIVEN
     when(adventurer.getTileX()).thenReturn(5);
     when(adventurer.getTileY()).thenReturn(5);
+    when(adventurer.move(1, 0)).thenReturn(true);
     // simulates that the Tile where the Adventurer's try to move is of Type.PATH
     when(grid[Y][X + 1].getType()).thenReturn(Type.PATH);
     // WHEN
@@ -141,13 +142,11 @@ class GameMapTest {
     // THEN
     assertEquals(MoveResult.MOVED, result, "The MoveResult should be MOVED");
 
-    // Verifies there's only one call to setTileX(6) and setTileY(5)
-    verify(adventurer, times(1)).setTileX(6);
-    verify(adventurer, times(1)).setTileY(5);
+    // Verifies there's only one call to move(1,0)
+    verify(adventurer, times(1)).move(1, 0);
 
-    // Verifies there's no call of setTileX and setTileY on other values
-    verify(adventurer, never()).setTileX(intThat(value -> value != 6));
-    verify(adventurer, never()).setTileY(intThat(value -> value != 5));
+    // Verifies there's no call of move on other values
+    verify(adventurer, never()).move(intThat(value -> value != 1), intThat(value -> value != 0));
   }
 
   // 1b - out of bound move
@@ -160,8 +159,8 @@ class GameMapTest {
     MoveResult result = gameMap.moveAdventurer(1, 0);
 
     assertEquals(MoveResult.OUT_OF_BOUNDS, result, "The MoveResult should be OUT_OF_BOUNDS");
-    verify(adventurer, never()).setTileX(anyInt());
-    verify(adventurer, never()).setTileY(anyInt());
+    verify(adventurer, never()).move(anyInt(), anyInt());
+
   }
 
   // 1c - !isValid move if cause is wood
@@ -197,8 +196,7 @@ class GameMapTest {
     MoveResult result = gameMap.moveAdventurer(1, 0);
     // THEN
     assertEquals(MoveResult.BLOCKED, result, "The MoveResult should be BLOCKED");
-    verify(adventurer, never()).setTileX(anyInt());
-    verify(adventurer, never()).setTileY(anyInt());
+    verify(adventurer, never()).move(anyInt(), anyInt());
   }
 
   // 2 - x and/or y are null
