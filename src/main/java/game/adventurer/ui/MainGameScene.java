@@ -27,9 +27,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.effect.DropShadow;
@@ -304,6 +307,13 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private void handleSuccessfulMove() {
     movesCount++;
+    // start animation
+    animateCreatureMove(adventurerCircle,
+        gameMap.getAdventurer().getPreviousTileX(),
+        gameMap.getAdventurer().getPreviousTileY(),
+        gameMap.getAdventurer().getTileX(),
+        gameMap.getAdventurer().getTileY()
+    );
     if (isTreasureCollected()) {
       if (onGameEnd != null) {
         onGameEnd.run();
@@ -314,9 +324,43 @@ public class MainGameScene extends BaseScene implements Localizable {
       if (!treasureCross.isVisible()) {
         updateTreasureVisibility();
       }
-      updateGameView();
     }
   }
+
+  private void animateCreatureMove(Node creatureRepresentation, int fromX, int fromY, int toX, int toY) {
+    // FRAMES * FRAME_DURATION_MS should be equal to the duration used in Creature.move
+    final int FRAMES = 60;
+    final int FRAME_DURATION_MS = 5;
+    if (creatureRepresentation instanceof Circle circle) {
+      double startX = xOffset + (fromX + 0.5) * tileSize;
+      double startY = yOffset + (fromY + 0.5) * tileSize;
+      double endX = xOffset + (toX + 0.5) * tileSize;
+      double endY = yOffset + (toY + 0.5) * tileSize;
+
+      double dx = (endX - startX) / FRAMES;
+      double dy = (endY - startY) / FRAMES;
+
+      Timeline timeline = new Timeline();
+      for (int i = 1; i <= FRAMES; i++) {
+        final int frame = i;
+        KeyFrame keyFrame = new KeyFrame(
+            Duration.millis(i * (double) FRAME_DURATION_MS),
+            event -> {
+              circle.setCenterX(startX + dx * frame);
+              circle.setCenterY(startY + dy * frame);
+            }
+        );
+        timeline.getKeyFrames().add(keyFrame);
+      }
+      timeline.setOnFinished(event -> updateGameView()); // corrects the position and size of the creature representation
+      // if the window has been resized during movement
+      timeline.play();
+    } else {
+      log.error("Unhandled Creature representation");
+    }
+
+  }
+
 
   private void handleWoundedMove() {
     showDamageEffect();

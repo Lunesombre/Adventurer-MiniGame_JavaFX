@@ -4,7 +4,9 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Getter
 @Setter
 public abstract class Creature {
@@ -13,7 +15,10 @@ public abstract class Creature {
   protected int tileX; // Position tileX on the game map
   protected int tileY; // Position tileY on the game map
   protected IntegerProperty health; // Number of life points of a Creature, observable
-  protected int moveSpeed; // unused at first, it shall be the number of tiles the creature can move per turn
+  protected int moveSpeed; // unused for now, but soon
+  protected long lastMoveTime = 0;
+  protected int previousTileX;
+  protected int previousTileY;
 
   private static final int DEFAULT_HEALTH = 10;
   private static final int DEFAULT_MOVE_SPEED = 1;
@@ -46,9 +51,17 @@ public abstract class Creature {
     this.health.set(health);
   }
 
-  public void move(int dx, int dy) {
-    this.tileX += dx;
-    this.tileY += dy;
-
+  public boolean move(int dx, int dy) {
+    long currentTime = System.currentTimeMillis();
+    if (lastMoveTime + 300 < currentTime) {
+      this.previousTileX = this.tileX;
+      this.previousTileY = this.tileY;
+      this.tileX += dx;
+      this.tileY += dy;
+      lastMoveTime = currentTime;
+      return true;
+    }
+    log.debug("Trying to move too early  :{}/300ms", currentTime - lastMoveTime);
+    return false;
   }
 }

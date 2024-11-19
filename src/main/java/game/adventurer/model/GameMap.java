@@ -17,7 +17,6 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//@AllArgsConstructor
 @Getter
 @Setter
 public class GameMap {
@@ -68,17 +67,17 @@ public class GameMap {
         woundsList.add(wound);
         return MoveResult.WOUNDED;
       } else {
-        LOG.debug("Mouvement invalide, l'aventurier reste en ({}, {})",
+        LOG.info("Mouvement invalide, l'aventurier reste en ({}, {})",
             adventurer.getTileX(), adventurer.getTileY());
         return MoveResult.BLOCKED;
       }
 
     }
 
-    // If everything else is ok, proceed with the move.
-    adventurer.setTileX(newX);
-    adventurer.setTileY(newY);
-    return MoveResult.MOVED;
+    // If everything else is ok, try to proceed with the move.
+    boolean hasMoved = adventurer.move(dx, dy);
+    // If move call wasn't too early, the Adventurer shall move, else return BLOCKED
+    return hasMoved ? MoveResult.MOVED : MoveResult.BLOCKED;
   }
 
   private boolean isValidMove(int x, int y, Creature creature) {
