@@ -9,13 +9,17 @@ import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.CreditsOverlay;
 import game.adventurer.ui.common.ScoreBoard;
 import java.time.LocalDateTime;
+import javafx.application.HostServices;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -41,6 +45,7 @@ public class EndGameScene extends BaseScene {
   private final int movesCount;
   private final DifficultyLevel difficultyLevel;
   private final double initialDistanceToTreasure;
+  private static final String HIGHSCORES_SHOW = "highScores.show";
 
   public final String restartButtonLabel;
   public final String quitButtonLabel;
@@ -53,9 +58,12 @@ public class EndGameScene extends BaseScene {
   private Text toggleScoreBoardText;
 
   private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
+  private final HostServices hostServices;
+  private CreditsOverlay creditsOverlay;
+
 
   public EndGameScene(SharedSize sharedSize, GameMap gameMap, int movesCount, DifficultyLevel difficultyLevel, int initialDistanceToTreasure,
-      HighScoreManager highScoreManager) {
+      HighScoreManager highScoreManager, HostServices hostServices) {
     super(new StackPane(), sharedSize);
     this.gameMap = gameMap;
     this.movesCount = movesCount;
@@ -64,6 +72,7 @@ public class EndGameScene extends BaseScene {
     this.highScoreManager = highScoreManager;
     this.restartButtonLabel = localizedMessageService.getMessage("button.replay");
     this.quitButtonLabel = localizedMessageService.getMessage("button.exit");
+    this.hostServices = hostServices;
     quitButton = new Button(quitButtonLabel);
     restartButton = new Button(restartButtonLabel);
     initialize();
@@ -73,6 +82,7 @@ public class EndGameScene extends BaseScene {
 
   @Override
   protected void initialize() {
+    Text credits;
     StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
 
@@ -117,15 +127,19 @@ public class EndGameScene extends BaseScene {
     //ScoreBoard
     scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
     // scoreBoardText
-    toggleScoreBoardText = new Text(localizedMessageService.getMessage("highScores.show"));
-    toggleScoreBoardText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
+    toggleScoreBoardText = new Text(localizedMessageService.getMessage(HIGHSCORES_SHOW));
+    toggleScoreBoardText.getStyleClass().add("small-text-elem");
     toggleScoreBoardText.setOnMouseClicked(this::toggleScoreBoard);
-    toggleScoreBoardText.setOnMouseEntered(e -> toggleScoreBoardText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
-    toggleScoreBoardText.setOnMouseExited(e -> toggleScoreBoardText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
+
+    // Credits
+    creditsOverlay = new CreditsOverlay(hostServices, sharedSize.getWidth(), sharedSize.getHeight());
+    credits = new Text(localizedMessageService.getMessage("credits.text"));
+    credits.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
+    credits.setOnMouseClicked(e -> creditsOverlay.show());
 
     scoreBox.getChildren().addAll(congratsLabel, movesLabel, treasureFlow, scoreLabel, buttonsBox);
-    mainContent.getChildren().addAll(scoreBox, toggleScoreBoardText);
-    root.getChildren().addAll(mainContent, scoreBoard);
+    mainContent.getChildren().addAll(scoreBox, toggleScoreBoardText, credits);
+    root.getChildren().addAll(mainContent, scoreBoard, creditsOverlay);
     scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight()); // updateSize and position,
     // done after the scoreBoard is added to root to prevent errors.
     StackPane.setAlignment(scoreBoard, Pos.CENTER_RIGHT);
@@ -136,6 +150,8 @@ public class EndGameScene extends BaseScene {
       }
     });
 
+    setOnKeyPressed(this::handleKeyPressed);
+
   }
 
   @Override
@@ -144,6 +160,7 @@ public class EndGameScene extends BaseScene {
     scoreBoard.updateStyles(width);
     scoreBoard.layout();
     scoreBoard.requestLayout();
+    creditsOverlay.updateSize(width, height);
   }
 
   private void toggleScoreBoard(MouseEvent event) {
@@ -152,9 +169,19 @@ public class EndGameScene extends BaseScene {
     if (scoreBoard.isShowing()) {
       toggleScoreBoardText.setText(localizedMessageService.getMessage("highScores.hide"));
     } else {
-      toggleScoreBoardText.setText(localizedMessageService.getMessage("highScores.show"));
+      toggleScoreBoardText.setText(localizedMessageService.getMessage(HIGHSCORES_SHOW));
     }
     event.consume();
+  }
+
+  private void toggleScoreBoard() {
+    scoreBoard.setVisible(true);
+    scoreBoard.toggleDisplay();
+    if (scoreBoard.isShowing()) {
+      toggleScoreBoardText.setText(localizedMessageService.getMessage("highScores.hide"));
+    } else {
+      toggleScoreBoardText.setText(localizedMessageService.getMessage(HIGHSCORES_SHOW));
+    }
   }
 
   private TextFlow getTreasureFlow(TreasureItem treasureItem) {
@@ -209,6 +236,21 @@ public class EndGameScene extends BaseScene {
       }
     }
     return count;
+  }
+
+  private void handleKeyPressed(KeyEvent event) {
+    if (event.getCode() == KeyCode.S && !creditsOverlay.isVisible()) {
+      toggleScoreBoard();
+    } else if (event.getCode() == KeyCode.C) {
+      if (scoreBoard.isShowing()) {
+        toggleScoreBoard();
+      }
+      if (creditsOverlay.isVisible()) {
+        creditsOverlay.hide();
+      } else {
+        creditsOverlay.show();
+      }
+    }
   }
 
 }

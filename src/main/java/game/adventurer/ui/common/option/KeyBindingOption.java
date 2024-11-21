@@ -37,7 +37,7 @@ public class KeyBindingOption implements Option<Map<String, KeyCode>> {
   private final Map<String, KeyCode> bindings;
   private final Button openDialogButton;
   private Consumer<Map<String, KeyCode>> changeListener;
-  private final List<KeyCode> forbiddenKeys = List.of(KeyCode.SPACE, KeyCode.ESCAPE, KeyCode.ENTER);
+  private final List<KeyCode> forbiddenKeys = List.of(KeyCode.SPACE, KeyCode.ESCAPE, KeyCode.ENTER, KeyCode.BACK_SPACE);
   private Map<String, KeyCode> tempBindings;
   private final LocalizedMessageService messageService = LocalizedMessageService.getInstance();
 

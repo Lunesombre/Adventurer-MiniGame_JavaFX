@@ -7,8 +7,10 @@ import game.adventurer.model.GameMap;
 import game.adventurer.model.base.Wound;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.CreditsOverlay;
 import java.util.List;
 import java.util.Locale;
+import javafx.application.HostServices;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -18,11 +20,15 @@ import javafx.scene.control.ListView;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 
 public class GameOverScene extends BaseScene implements Localizable {
 
@@ -32,17 +38,22 @@ public class GameOverScene extends BaseScene implements Localizable {
   private final Button replayButton = new Button(messageService.getMessage("button.replay"));
   private final Button quitButton = new Button(messageService.getMessage("button.exit"));
   private Label titleLabel;
+  private final HostServices hostServices;
+  private CreditsOverlay creditsOverlay;
 
-  public GameOverScene(GameMap gameMap, SharedSize sharedSize) {
-    super(new VBox(20), sharedSize);
+
+  public GameOverScene(GameMap gameMap, SharedSize sharedSize, HostServices hostServices) {
+    super(new StackPane(), sharedSize);
     this.gameMap = gameMap;
+    this.hostServices = hostServices;
 
     initialize();
   }
 
   @Override
   protected void initialize() {
-    VBox root = (VBox) getRoot();
+    Text credits;
+    StackPane root = (StackPane) getRoot();
     root.setAlignment(Pos.CENTER);
 
     //Scene Title
@@ -94,17 +105,27 @@ public class GameOverScene extends BaseScene implements Localizable {
     buttonBox.setAlignment(Pos.CENTER);
     buttonBox.getChildren().addAll(replayButton, quitButton);
 
+    // Credits
+    creditsOverlay = new CreditsOverlay(hostServices, sharedSize.getWidth(), sharedSize.getHeight());
+    credits = new Text(messageService.getMessage("credits.text"));
+    credits.getStyleClass().add("small-text-elem");
+    credits.setOnMouseClicked(e -> creditsOverlay.show());
+
     // Add elements to main VBox
-    root.getChildren().addAll(titleLabel, contentBox, buttonBox);
+    VBox main = new VBox(20, titleLabel, contentBox, buttonBox, credits);
+    main.setAlignment(Pos.CENTER);
+    root.getChildren().addAll(main, creditsOverlay);
 
     // Background style
     root.setStyle("-fx-background-color: #2C3E50;");
+
+    setOnKeyPressed(this::handleKeyPressed);
 
   }
 
   @Override
   protected void onSizeChanged(double width, double height) {
-    // method empty as no specific thing to do on the scene's size changes.
+    creditsOverlay.updateSize(width, height);
   }
 
   public void setOnReplayGame(Runnable action) {
@@ -163,6 +184,16 @@ public class GameOverScene extends BaseScene implements Localizable {
         }
 
         setGraphic(container);
+      }
+    }
+  }
+
+  private void handleKeyPressed(KeyEvent event) {
+    if (event.getCode() == KeyCode.C) {
+      if (creditsOverlay.isVisible()) {
+        creditsOverlay.hide();
+      } else {
+        creditsOverlay.show();
       }
     }
   }

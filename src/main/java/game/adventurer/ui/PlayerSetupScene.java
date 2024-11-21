@@ -8,6 +8,7 @@ import game.adventurer.service.HighScoreManager;
 import game.adventurer.service.LocalizationService;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.CreditsOverlay;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
 import game.adventurer.ui.common.TransitionScene;
@@ -15,6 +16,7 @@ import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.util.TriConsumer;
 import java.util.Arrays;
 import java.util.Locale;
+import javafx.application.HostServices;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -27,6 +29,8 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -46,6 +50,7 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
   public static final String SETUP_MAP_SIZE_SMALL = "setup.mapSize.small";
   public static final String SETUP_MAP_SIZE_LARGE = "setup.mapSize.large";
   private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
+  private final HostServices hostServices;
   private String displayHighScores;
   private String hideHighScores;
   private ToggleGroup mapSizeGroup;
@@ -58,9 +63,12 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
 
   private final HighScoreManager highScoreManager;
   private ScoreBoard scoreBoard;
-  private Text toggleText;
+  private Text toggleScoreboardText;
   private VBox mainContent;
   private OptionsPanel options;
+
+  private CreditsOverlay creditsOverlay;
+  private Text credits;
 
   private final LocalizationService localizationService;
   // localizable texts
@@ -82,10 +90,11 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
   private Tooltip hardModeTooltip;
 
   public PlayerSetupScene(SharedSize sharedSize, HighScoreManager highScoreManager,
-      LocalizationService localizationService) {
+      LocalizationService localizationService, HostServices hostServices) {
     super(new StackPane(), sharedSize);
     this.highScoreManager = highScoreManager;
     this.localizationService = localizationService;
+    this.hostServices = hostServices;
     this.displayHighScores = localizedMessageService.getMessage("highScores.show");
     this.hideHighScores = localizedMessageService.getMessage("highScores.hide");
     initialize();
@@ -187,29 +196,31 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
     //ScoreBoard
     scoreBoard = new ScoreBoard(highScoreManager, sharedSize.getWidth());
     // scoreBoardText
-    toggleText = new Text(displayHighScores);
-    toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;");
-    toggleText.setOnMouseClicked(this::toggleScoreBoard);
-    toggleText.setOnMouseEntered(e -> toggleText.setStyle("-fx-fill: #aca29c; -fx-font-size: 14px; -fx-cursor: hand;"));
-    toggleText.setOnMouseExited(e -> toggleText.setStyle("-fx-fill: #958275; -fx-font-size: 14px;"));
+    toggleScoreboardText = new Text(displayHighScores);
+    toggleScoreboardText.getStyleClass().add("small-text-elem");
+    toggleScoreboardText.setOnMouseClicked(this::toggleScoreBoard);
 
+    // Credits
+    creditsOverlay = new CreditsOverlay(hostServices, localizationService, sharedSize.getWidth(), sharedSize.getHeight());
+    credits = new Text(localizedMessageService.getMessage("credits.text"));
+    credits.getStyleClass().add("small-text-elem");
+    credits.setOnMouseClicked(e -> creditsOverlay.show());
     // Options
     LanguageOption languageOption = new LanguageOption(localizedMessageService, localizationService, 24);
     options = new OptionsPanel(sharedSize.getWidth(), sharedSize.getHeight(), languageOption);
 
     mainContent.getChildren()
         .addAll(titleLabel, adventurerNameField, errorLabel, mapSizeLabel, mapSizeBox, difficultyModeLabel, difficultyModeBox, startButton,
-            toggleText);
-    root.getChildren().addAll(mainContent, scoreBoard, options);
+            toggleScoreboardText, credits);
+    root.getChildren().addAll(mainContent, scoreBoard, options, creditsOverlay);
     scoreBoard.updateSize(sharedSize.getWidth(), sharedSize.getHeight());
     StackPane.setAlignment(scoreBoard, Pos.CENTER_RIGHT);
     // Hide the ScoreBoard by clicking outside it
     root.setOnMouseClicked(e -> {
       if (scoreBoard.isShowing() && !scoreBoard.getBoundsInParent().contains(e.getX(), e.getY())) {
         scoreBoard.toggleDisplay();
-        toggleText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
+        toggleScoreboardText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
       }
-
     });
 
     // Listener for Adventurer's cause validation
@@ -237,8 +248,43 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
       }
     });
 
+    setOnKeyPressed(this::handleKeyPressed);
+
     // Register this class as Localizable - do it after the localizable texts are set to avoid Null Pointer Exception.
     localizationService.registerLocalizable(this);
+  }
+
+  public void handleKeyPressed(KeyEvent event) {
+    // NB: when the focus is on the TextField adventurerNameField, the TextField has precedence for keystrokes.
+
+    // hides the credits' overlay on ESCAPE pressed or closes the OptionsPanel is opened
+    if (event.getCode().equals(KeyCode.ESCAPE)) {
+      if (creditsOverlay.isVisible()) {
+        creditsOverlay.hide();
+      } else if (options.isShowing()) {
+        options.toggleOptions();
+      }
+    }
+    // Closes the options panel
+    if (event.getCode().equals(KeyCode.BACK_SPACE) && !creditsOverlay.isVisible()) {
+      options.toggleOptions();
+    }
+
+    if (event.getCode() == KeyCode.S && !creditsOverlay.isVisible()) {
+      toggleScoreBoard();
+    }
+    if (event.getCode() == KeyCode.C) {
+      if (scoreBoard.isShowing()) {
+        toggleScoreBoard();
+      }
+      if (creditsOverlay.isVisible()) {
+        creditsOverlay.hide();
+      } else {
+        creditsOverlay.show();
+      }
+    }
+
+    event.consume();
   }
 
   @Override
@@ -263,6 +309,7 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
     scoreBoard.layout();
     scoreBoard.requestLayout();
     options.getChildren().getFirst().setTranslateX(newWidth); // keeps the options "optionsContent" hidden on resize
+    creditsOverlay.updateSize(newWidth, newHeight);
   }
 
 
@@ -335,11 +382,21 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
     scoreBoard.setVisible(true);
     scoreBoard.toggleDisplay();
     if (scoreBoard.isShowing()) {
-      toggleText.setText(hideHighScores);
+      toggleScoreboardText.setText(hideHighScores);
     } else {
-      toggleText.setText(displayHighScores);
+      toggleScoreboardText.setText(displayHighScores);
     }
     event.consume();
+  }
+
+  private void toggleScoreBoard() {
+    scoreBoard.setVisible(true);
+    scoreBoard.toggleDisplay();
+    if (scoreBoard.isShowing()) {
+      toggleScoreboardText.setText(hideHighScores);
+    } else {
+      toggleScoreboardText.setText(displayHighScores);
+    }
   }
 
   private void restoreDefaultFocus() {
@@ -385,6 +442,7 @@ public class PlayerSetupScene extends BaseScene implements Localizable {
     hardModeTooltip.setText(localizedMessageService.getMessage("setup.difficulty.hard.tooltip"));
     displayHighScores = localizedMessageService.getMessage("highScores.show");
     hideHighScores = localizedMessageService.getMessage("highScores.hide");
-    toggleText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
+    toggleScoreboardText.setText(scoreBoard.isShowing() ? hideHighScores : displayHighScores);
+    credits.setText(localizedMessageService.getMessage("credits.text"));
   }
 }

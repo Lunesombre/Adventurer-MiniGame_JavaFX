@@ -1,6 +1,7 @@
 package game.adventurer.ui.common;
 
 import game.adventurer.common.SharedSize;
+import game.adventurer.ui.PlayerSetupScene;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
 import lombok.Getter;
@@ -29,6 +30,9 @@ public class TransitionScene<T extends BaseScene> extends BaseScene {
     super(new StackPane(), sharedSize);
     this.oldScene = oldScene;
     this.newScene = newScene;
+    if (this.newScene instanceof PlayerSetupScene pss) {
+      setOnKeyPressed(pss::handleKeyPressed);
+    }
     initialize();
   }
 
