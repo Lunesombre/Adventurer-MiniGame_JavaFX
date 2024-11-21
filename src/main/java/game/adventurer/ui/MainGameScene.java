@@ -17,6 +17,7 @@ import game.adventurer.model.enums.MoveResult;
 import game.adventurer.service.LocalizationService;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
+import game.adventurer.ui.common.CreditsOverlay;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
 import game.adventurer.ui.common.option.KeyBindingOption;
@@ -29,6 +30,7 @@ import java.util.Map;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.HostServices;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -107,27 +109,29 @@ public class MainGameScene extends BaseScene implements Localizable {
   private ScoreBoardOption scoreBoardOption;
   private final LocalizedMessageService localizedMessageService = LocalizedMessageService.getInstance();
   private final LocalizationService localizationService;
+  private final HostServices hostServices;
+  private CreditsOverlay creditsOverlay;
   /*
   Localizable elements
    */
-  Text contactPH;
-  Text legalPH;
-  Text aboutUsPH;
+  Text credits;
   Text pauseText;
   LanguageOption languageOption;
   VBox optionsBox;
 
 
   //V3 pattern Factory
-  private MainGameScene(BorderPane root, SharedSize sharedSize, LocalizationService localizationService) {
+  private MainGameScene(BorderPane root, SharedSize sharedSize, LocalizationService localizationService, HostServices hostServices) {
     super(root, sharedSize);
     this.localizationService = localizationService;
+    this.hostServices = hostServices;
   }
 
-  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize, DifficultyLevel difficultyLevel, LocalizationService localizationService)
+  public static MainGameScene create(GameMap gameMap, SharedSize sharedSize, DifficultyLevel difficultyLevel, LocalizationService localizationService,
+      HostServices hostServices)
       throws InvalidGameStateException {
     BorderPane root = new BorderPane();
-    MainGameScene scene = new MainGameScene(root, sharedSize, localizationService);
+    MainGameScene scene = new MainGameScene(root, sharedSize, localizationService, hostServices);
     scene.gameMap = gameMap;
     scene.difficultyLevel = difficultyLevel;
     scene.initialize();
@@ -194,7 +198,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     effectOverlay.setWidth(windowWidth);
     effectOverlay.setHeight(windowHeight);
     effectOverlay.setVisible(false);
-    root.getChildren().add(effectOverlay); // Must be the last children added to appear above all other children.
+    root.getChildren().add(effectOverlay); // Must be added after other children to appear above them.
 
     pauseRectangle = new Rectangle(windowWidth, windowHeight, Color.color(1.0, 1.0, 1.0, 0.3));
     pauseRectangle.setPickOnBounds(false);
@@ -214,6 +218,10 @@ public class MainGameScene extends BaseScene implements Localizable {
     root.getChildren().add(pause);
     root.setRight(rightPanel); // Defining the setRight here for it to never be covered by the pause StackPane
     root.getChildren().add(scoreBoard); // Last to be added, the initially hidden ScoreBoard
+
+    // Adding the credits overlay panel
+    creditsOverlay = new CreditsOverlay(hostServices, localizationService, windowWidth, windowHeight);
+    root.getChildren().add(creditsOverlay);
 
     // Hide the ScoreBoard by clicking outside it
     root.setOnMouseClicked(e -> {
@@ -254,6 +262,8 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     scoreBoardOption.adjustContentLabelsFontSize(width);
 
+    creditsOverlay.updateSize(width, height);
+
     // Determine if other listeners need to be put here or not
   }
 
@@ -268,8 +278,43 @@ public class MainGameScene extends BaseScene implements Localizable {
       moveResult = handleMovement(keyCode, bindings);
     } else {
       moveResult = switch (keyCode) {
-        case SPACE -> {
+        case SPACE, P -> {
+          if (creditsOverlay.isVisible()) {
+            creditsOverlay.hide();
+          }
           togglePause();
+          yield MoveResult.BLOCKED;
+        }
+        case ESCAPE -> {
+          if (creditsOverlay.isVisible()) {
+            creditsOverlay.hide();
+          } else {
+            togglePause();
+          }
+          yield MoveResult.BLOCKED;
+        }
+        case BACK_SPACE -> {
+          options.toggleOptions();
+          if (!isPaused) {
+            togglePause();
+          }
+          yield MoveResult.BLOCKED;
+        }
+        case C -> {
+          if (isPaused) {
+            if (creditsOverlay.isVisible()) {
+              creditsOverlay.hide();
+            } else {
+              creditsOverlay.show();
+            }
+          } else {
+            if (creditsOverlay.isVisible()) {
+              creditsOverlay.hide();
+            } else {
+              creditsOverlay.show();
+            }
+            togglePause();
+          }
           yield MoveResult.BLOCKED;
         }
         default -> {
@@ -688,10 +733,16 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     VBox contactBox = new VBox(5);
     contactBox.setAlignment(Pos.BOTTOM_RIGHT);
-    contactPH = new Text(localizedMessageService.getMessage("mainScene.contact"));
-    legalPH = new Text(localizedMessageService.getMessage("mainScene.legal"));
-    aboutUsPH = new Text(localizedMessageService.getMessage("mainScene.aboutUs"));
-    contactBox.getChildren().addAll(aboutUsPH, contactPH, legalPH);
+    credits = new Text(localizedMessageService.getMessage("mainScene.credits"));
+
+    credits.setOnMouseClicked((e -> {
+      if (!isPaused) {
+        togglePause();
+      }
+      creditsOverlay.show();
+    }));
+
+    contactBox.getChildren().add(credits);
 
     rightPanel.getChildren().addAll(optionsBox, messagesBox, contactBox);
 
@@ -849,9 +900,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   @Override
   public void updateLanguage(Locale newLocale) {
-    contactPH.setText(localizedMessageService.getMessage("mainScene.contact"));
-    legalPH.setText(localizedMessageService.getMessage("mainScene.legal"));
-    aboutUsPH.setText(localizedMessageService.getMessage("mainScene.aboutUs"));
+    credits.setText(localizedMessageService.getMessage("mainScene.credits"));
     pauseText.setText(localizedMessageService.getMessage("mainScene.pause"));
     scoreBoardOption.updateLanguage(newLocale);
     options.updateLanguage();

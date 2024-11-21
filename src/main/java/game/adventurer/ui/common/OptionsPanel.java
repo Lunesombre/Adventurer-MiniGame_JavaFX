@@ -164,7 +164,7 @@ public class OptionsPanel extends StackPane {
     if (isShowing) {
       switch (event.getCode()) {
         case UP, DOWN, LEFT, RIGHT, ENTER -> event.consume(); // Prevents propagation
-        case SPACE, ESCAPE -> {
+        case SPACE, ESCAPE, BACK_SPACE -> {
           toggleOptions();
           event.consume();
         }

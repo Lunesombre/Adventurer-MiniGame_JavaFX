@@ -413,4 +413,43 @@ Options styles
   -fx-border-color: rgba(50, 50, 50, 0.8);
 }
 
+/*
+  Credits overlay
+ */
+.text-white {
+  -fx-fill: white;
+}
+
+.text-16 {
+  -fx-font-size: 16px;
+}
+
+.text-50 {
+  -fx-font-size: 50px;
+}
+
+.links {
+  -fx-text-fill: orange;
+  -fx-underline: false;
+}
+
+.links:hover {
+  -fx-text-fill: #ffc400;
+  -fx-underline: true;
+}
+
+.links:visited {
+  -fx-text-fill: #c58100;
+}
+
+.small-text-elem {
+  -fx-fill: #958275;
+  -fx-font-size: 14px;
+}
+
+.small-text-elem:hover {
+  -fx-fill: #aca29c;
+  -fx-font-size: 14px;
+  -fx-cursor: hand;
+}
 
