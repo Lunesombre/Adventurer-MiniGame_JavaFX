@@ -619,7 +619,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     HBox imageBox = new HBox();
     imageBox.setAlignment(Pos.CENTER);
-    Image charImage = new Image("assets/images/placeholderHero.jpg");
+    Image charImage = new Image("assets/images/adventurer_chara_v_0_2.png");
     ImageView playerImage = new ImageView(charImage); // Character image (placeholder for now)
     playerImage.setPreserveRatio(true);
     playerImage.fitWidthProperty().bind(imageBox.widthProperty().multiply(0.8));
