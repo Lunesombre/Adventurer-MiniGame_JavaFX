@@ -1,8 +1,8 @@
 package game.adventurer.ui.common;
 
 import static game.adventurer.AdventurerGameApp.highScoreManager;
+import static game.adventurer.util.MiscUtil.applyGlobalCss;
 
-import game.adventurer.config.AppConfig;
 import game.adventurer.model.Score;
 import game.adventurer.service.HighScoreManager;
 import game.adventurer.service.LocalizedMessageService;
@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -51,7 +50,7 @@ public class ScoreBoard extends VBox {
 
 
   public ScoreBoard(HighScoreManager highScoreManager, double initialWidth) {
-    this.getStylesheets().add(Objects.requireNonNull(getClass().getResource(AppConfig.getInstance().getGlobalStylePath())).toExternalForm());
+    applyGlobalCss(this);
 
     List<Score> highScores = highScoreManager.getTopScores(MAX_NUMBER_OF_SCORES);
     // ScoreBoard title
