@@ -62,6 +62,14 @@
       <artifactId>javafx-fxml</artifactId>
       <version>22.0.2</version>
     </dependency>
+
+    <dependency>
+      <groupId>org.testfx</groupId>
+      <artifactId>testfx-junit5</artifactId>
+      <version>4.0.17</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
