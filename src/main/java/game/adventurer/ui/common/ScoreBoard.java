@@ -316,16 +316,24 @@ public class ScoreBoard extends VBox {
   private void updateOtherScore(Score score, int position) {
     HBox scoreBox = (HBox) otherHighScores.getChildren().get(position - 3);
 
+    // Adventurer's name
     Label nameLabel = (Label) scoreBox.getChildren().get(1);
     nameLabel.setText(score.getAdventurerName());
 
+    // Score
     HBox scoreValueBox = (HBox) ((Label) scoreBox.getChildren().get(2)).getGraphic();
+    // Score's value
     Text scoreValueText = (Text) scoreValueBox.getChildren().getFirst();
     scoreValueText.setText(String.valueOf(score.getScoreValue()));
+    // Score's "points" complement - potentially modified on language changes
+    Text pointsText = (Text) scoreValueBox.getChildren().get(1);
+    pointsText.setText(messageService.getMessage(POINTS_LABEL));
 
+    // Date
     Label dateLabel = (Label) scoreBox.getChildren().get(3);
     dateLabel.setText(getFormattedStringFromLocalDateTime(score.getDate()));
 
+    // Difficulty
     Label difficultyLabel = (Label) scoreBox.getChildren().get(4);
     difficultyLabel.setText(messageService.getMessage(MODE_LABEL, score.getDifficultyLevel().toString()));
   }
@@ -351,40 +359,11 @@ public class ScoreBoard extends VBox {
   private void updateScoreLanguage(Score score, int index) {
     if (index >= 0 && index < 3) {
       // Podium update
-      int place;
-      switch (index) {
-        case 0 -> place = 1;
-        case 1 -> place = 0;
-        default -> place = 2;
-      }
-      VBox podiumScoreCard = (VBox) podium.getChildren().get(place);
-      // Score text update
-      Text pointsText = (Text) podiumScoreCard.getChildren().get(2);
-      pointsText.setText(messageService.getMessage(POINTS_LABEL));
-
-      // Difficulty text update
-      Label difficultyLabel = (Label) podiumScoreCard.getChildren().get(4);
-      difficultyLabel.setText(messageService.getMessage(MODE_LABEL, score.getDifficultyLevel().toString()));
-
-      // Date format update
-      Label dateLabel = (Label) podiumScoreCard.getChildren().get(3);
-      dateLabel.setText(getFormattedStringFromLocalDateTime(score.getDate()));
+      updatePodiumScore(score, index);
 
     } else if (index < Math.min(highScoreManager.getHighScores().size(), MAX_NUMBER_OF_SCORES)) {
       // Updates the other scores
-      // Score text update
-      HBox scoreBox = (HBox) otherHighScores.getChildren().get(index - 3);
-      HBox scoreValueBox = (HBox) ((Label) scoreBox.getChildren().get(2)).getGraphic();
-      Text pointsText = (Text) scoreValueBox.getChildren().get(1);
-      pointsText.setText(messageService.getMessage(POINTS_LABEL));
-
-      // Difficulty text update
-      Label difficultyLabel = (Label) scoreBox.getChildren().get(4);
-      difficultyLabel.setText(messageService.getMessage(MODE_LABEL, score.getDifficultyLevel().toString()));
-
-      // Date format update
-      Label dateLabel = (Label) scoreBox.getChildren().get(3);
-      dateLabel.setText(getFormattedStringFromLocalDateTime(score.getDate()));
+      updateOtherScore(score, index);
     }
   }
 }
