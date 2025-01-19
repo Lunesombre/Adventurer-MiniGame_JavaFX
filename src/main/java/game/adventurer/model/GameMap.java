@@ -6,6 +6,7 @@ import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.base.Creature;
 import game.adventurer.model.base.Wound;
+import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.model.enums.WoundCause;
 import game.adventurer.service.LocalizedMessageService;
@@ -38,7 +39,7 @@ public class GameMap {
     this.woundsList = new ArrayList<>();
   }
 
-  public MoveResult moveAdventurer(int dx, int dy) {
+  public MoveResult moveAdventurer(Move move) {
     try {
       if (isOutOfMapBounds(adventurer.getTileX(), adventurer.getTileY())) {
         LOG.error("Adventurer's current coordinates ({}, {}) are invalid!",
@@ -48,8 +49,8 @@ public class GameMap {
     } catch (InvalidGameStateException e) {
       handleInvalidGameState(getClass(), e);
     }
-    int newX = adventurer.getTileX() + dx;
-    int newY = adventurer.getTileY() + dy;
+    int newX = adventurer.getTileX() + move.getDx();
+    int newY = adventurer.getTileY() + move.getDy();
 
     // First, check if the move is within the map bounds
     if (isOutOfMapBounds(newX, newY)) {
@@ -75,7 +76,7 @@ public class GameMap {
     }
 
     // If everything else is ok, try to proceed with the move.
-    boolean hasMoved = adventurer.move(dx, dy);
+    boolean hasMoved = adventurer.move(move);
     // If move call wasn't too early, the Adventurer shall move, else return BLOCKED
     return hasMoved ? MoveResult.MOVED : MoveResult.BLOCKED;
   }
@@ -87,6 +88,30 @@ public class GameMap {
       }
       case Monster ignored -> {
         return x >= 0 && x < mapWidth && y >= 0 && y < mapHeight;
+      }
+      default -> {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * Checks if a given position is valid for a specific creature on the game map.
+   *
+   * <p>The validity of a position depends on the type of creature.
+   *
+   * @param position The position to check for validity.
+   * @param creature The creature for which the position is being checked.
+   * @return true if the position is valid for the given creature, false otherwise.
+   */
+  public boolean isValidPosition(Position position, Creature creature) {
+    switch (creature) {
+      case Adventurer ignored -> {
+        return position.x() >= 0 && position.x() < mapWidth && position.y() >= 0 && position.y() < mapHeight
+            && getTileTypeAt(position.x(), position.y()) == Type.PATH;
+      }
+      case Monster ignored -> {
+        return position.x() >= 0 && position.x() < mapWidth && position.y() >= 0 && position.y() < mapHeight;
       }
       default -> {
         return false;
