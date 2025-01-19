@@ -1,6 +1,7 @@
 package game.adventurer.ui;
 
 import static game.adventurer.AdventurerGameApp.highScoreManager;
+import static game.adventurer.util.MiscUtil.calculateFieldOfView;
 import static javafx.scene.paint.Color.rgb;
 
 import game.adventurer.common.Localizable;
@@ -9,10 +10,13 @@ import game.adventurer.controller.RightPanelController;
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Adventurer;
 import game.adventurer.model.GameMap;
+import game.adventurer.model.Position;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.enums.DifficultyLevel;
+import game.adventurer.model.enums.Direction;
+import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.service.LocalizationService;
 import game.adventurer.service.LocalizedMessageService;
@@ -25,8 +29,10 @@ import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.ui.common.option.ScoreBoardOption;
 import game.adventurer.util.PathfindingUtil;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -111,6 +117,10 @@ public class MainGameScene extends BaseScene implements Localizable {
   private final LocalizationService localizationService;
   private final HostServices hostServices;
   private CreditsOverlay creditsOverlay;
+
+  private Rectangle[][] tileRectangles; // 2D array to store references to the mapView rectangles
+  private Set<Position> visibleTiles; // Positions of the Tiles that the Adventurer has in its field of view
+
   /*
   Localizable elements
    */
@@ -134,6 +144,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     MainGameScene scene = new MainGameScene(root, sharedSize, localizationService, hostServices);
     scene.gameMap = gameMap;
     scene.difficultyLevel = difficultyLevel;
+    scene.tileRectangles = new Rectangle[gameMap.getMapHeight()][gameMap.getMapWidth()];
     scene.initialize();
     return scene;
   }
@@ -275,7 +286,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     KeyCode keyCode = event.getCode();
     MoveResult moveResult;
     if (bindings.containsValue(keyCode)) {
-      moveResult = handleMovement(keyCode, bindings);
+      moveResult = handleAdventurerMovement(keyCode, bindings);
     } else {
       moveResult = switch (keyCode) {
         case SPACE, P -> {
@@ -328,15 +339,31 @@ public class MainGameScene extends BaseScene implements Localizable {
     event.consume();
   }
 
-  private MoveResult handleMovement(KeyCode keyCode, Map<String, KeyCode> bindings) {
+  private MoveResult handleAdventurerMovement(KeyCode keyCode, Map<String, KeyCode> bindings) {
     if (isPaused) {
       return MoveResult.BLOCKED;
     }
     return switch (keyCode) {
-      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.up") -> gameMap.moveAdventurer(0, -1);
-      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.down") -> gameMap.moveAdventurer(0, 1);
-      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.left") -> gameMap.moveAdventurer(-1, 0);
-      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.right") -> gameMap.moveAdventurer(1, 0);
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.up") -> {
+        gameMap.getAdventurer().setFacingDirection(Direction.NORTH);
+        updateGameView();
+        yield gameMap.moveAdventurer(Move.UP);
+      }
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.down") -> {
+        gameMap.getAdventurer().setFacingDirection(Direction.SOUTH);
+        updateGameView();
+        yield gameMap.moveAdventurer(Move.DOWN);
+      }
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.left") -> {
+        gameMap.getAdventurer().setFacingDirection(Direction.WEST);
+        updateGameView();
+        yield gameMap.moveAdventurer(Move.LEFT);
+      }
+      case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.right") -> {
+        gameMap.getAdventurer().setFacingDirection(Direction.EAST);
+        updateGameView();
+        yield gameMap.moveAdventurer(Move.RIGHT);
+      }
       default -> MoveResult.BLOCKED;
     };
   }
@@ -474,6 +501,9 @@ public class MainGameScene extends BaseScene implements Localizable {
     line1.setStrokeWidth(tileSize / 20);
     line2.setStrokeWidth(tileSize / 20);
 
+    // Set Adventurer field of View visually
+    updateFieldOfView();
+
     log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
         gameMap.getAdventurer().getTileX(),
         gameMap.getAdventurer().getTileY(),
@@ -521,6 +551,7 @@ public class MainGameScene extends BaseScene implements Localizable {
         rect.setStroke(Color.web("#4a5246")); // grey-greenish tile border
         rect.setStrokeWidth(0.5);
         mapView.getChildren().add(rect);
+        tileRectangles[y][x] = rect; // Store reference to the rectangle
       }
     }
 
@@ -552,6 +583,14 @@ public class MainGameScene extends BaseScene implements Localizable {
     adventurerCircle.setCenterY(advY);
     mapView.getChildren().add(adventurerCircle);
 
+    // Adding initial field of view representation
+    visibleTiles = calculateFieldOfView(gameMap.getAdventurer(), gameMap);
+    for (Position pos : visibleTiles) {
+      Rectangle rect = tileRectangles[pos.y()][pos.x()];
+      if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Type.PATH) {
+        rect.setFill(Color.web("#D8A095"));
+      }
+    }
     handleResize();
   }
 
@@ -905,6 +944,30 @@ public class MainGameScene extends BaseScene implements Localizable {
     scoreBoardOption.updateLanguage(newLocale);
     options.updateLanguage();
     rightPanelController.updateLanguage(newLocale);
+  }
+
+  private void updateFieldOfView() {
+    Set<Position> newVisibleTiles = calculateFieldOfView(gameMap.getAdventurer(), gameMap);
+    Set<Position> previouslyVisibleTiles = new HashSet<>(visibleTiles);
+
+    // Resets tiles that are no longer visible
+    for (Position pos : previouslyVisibleTiles) {
+      if (!newVisibleTiles.contains(pos)) {
+        Rectangle rect = tileRectangles[pos.y()][pos.x()];
+        if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Tile.Type.PATH) {
+          rect.setFill(Color.web("#B87065")); // Original PATH color
+        }
+      }
+    }
+    // Updates newly visible tiles
+    for (Position pos : newVisibleTiles) {
+      Rectangle rect = tileRectangles[pos.y()][pos.x()];
+      if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Type.PATH) {
+        rect.setFill(Color.web("#D8A095")); // Lighter PATH color
+      }
+    }
+    // Update the stored visible tiles
+    visibleTiles = newVisibleTiles;
   }
 }
 

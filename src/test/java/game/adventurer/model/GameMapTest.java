@@ -3,9 +3,7 @@ package game.adventurer.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -15,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Tile.Type;
+import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.util.MiscUtil;
@@ -134,19 +133,23 @@ class GameMapTest {
     // GIVEN
     when(adventurer.getTileX()).thenReturn(5);
     when(adventurer.getTileY()).thenReturn(5);
-    when(adventurer.move(1, 0)).thenReturn(true);
+    when(adventurer.move(Move.RIGHT)).thenReturn(true);
     // simulates that the Tile where the Adventurer's try to move is of Type.PATH
     when(grid[Y][X + 1].getType()).thenReturn(Type.PATH);
     // WHEN
-    MoveResult result = gameMap.moveAdventurer(1, 0);
+    MoveResult result = gameMap.moveAdventurer(Move.RIGHT);
     // THEN
     assertEquals(MoveResult.MOVED, result, "The MoveResult should be MOVED");
 
     // Verifies there's only one call to move(1,0)
-    verify(adventurer, times(1)).move(1, 0);
+    verify(adventurer, times(1)).move(Move.RIGHT);
 
     // Verifies there's no call of move on other values
-    verify(adventurer, never()).move(intThat(value -> value != 1), intThat(value -> value != 0));
+    for (Move move : Move.values()) {
+      if (move != Move.RIGHT) {
+        verify(adventurer, never()).move(move);
+      }
+    }
   }
 
   // 1b - out of bound move
@@ -156,10 +159,12 @@ class GameMapTest {
     when(adventurer.getTileX()).thenReturn(MAP_WIDTH - 1);
     when(adventurer.getTileY()).thenReturn(MAP_HEIGHT - 1);
 
-    MoveResult result = gameMap.moveAdventurer(1, 0);
+    MoveResult result = gameMap.moveAdventurer(Move.RIGHT);
 
     assertEquals(MoveResult.OUT_OF_BOUNDS, result, "The MoveResult should be OUT_OF_BOUNDS");
-    verify(adventurer, never()).move(anyInt(), anyInt());
+    for (Move move : Move.values()) {
+      verify(adventurer, never()).move(move);
+    }
 
   }
 
@@ -174,7 +179,7 @@ class GameMapTest {
     log.debug("Adventurer's health: {}", gameMap.getAdventurer().getHealth());
     when(grid[Y][X + 1].getType()).thenReturn(Type.WOOD);
     // WHEN
-    MoveResult result = gameMap.moveAdventurer(1, 0);
+    MoveResult result = gameMap.moveAdventurer(Move.RIGHT);
     // THEN
     log.debug("Adventurer's health after move: {}", realAdventurer.getHealth());
     assertEquals(MoveResult.WOUNDED, result, "The MoveResult should be WOUNDED");
@@ -189,26 +194,26 @@ class GameMapTest {
     when(adventurer.getTileX()).thenReturn(X);
     when(adventurer.getTileY()).thenReturn(Y);
     // small trick: first time it's called it return the wood type thus failing the isValidMove evaluation,
-    // then return PATH on check ing while it isn't valid thus not triggering the WoodWound mechanic and entering the else
+    // then return PATH on checking while it isn't valid thus not triggering the WoodWound mechanic and entering the else
     when(grid[Y][X + 1].getType()).thenReturn(Type.WOOD, Type.PATH);
 
     // WHEN
-    MoveResult result = gameMap.moveAdventurer(1, 0);
+    MoveResult result = gameMap.moveAdventurer(Move.RIGHT);
     // THEN
     assertEquals(MoveResult.BLOCKED, result, "The MoveResult should be BLOCKED");
-    verify(adventurer, never()).move(anyInt(), anyInt());
+    for (Move move : Move.values()) {
+      if (move != Move.RIGHT) {
+        verify(adventurer, never()).move(move);
+      }
+    }
   }
 
-  // 2 - x and/or y are null
+  // 2 - Move is null
   @Test
   @DisplayName("Move with null coordinates")
-  void testMoveAdventurer_NullCoordinates() {
-    assertThrows(NullPointerException.class, () -> gameMap.moveAdventurer(NULL_COORDINATE, Y),
-        "Should throw a NullPointerException on attempting to move on a null coordinate for X");
-    assertThrows(NullPointerException.class, () -> gameMap.moveAdventurer(X, NULL_COORDINATE),
-        "Should throw a NullPointerException on attempting to move on a null coordinate for Y");
-    assertThrows(NullPointerException.class, () -> gameMap.moveAdventurer(NULL_COORDINATE, NULL_COORDINATE),
-        "Should throw a NullPointerException on attempting to move on a null coordinate for X and Y");
+  void testMoveAdventurer_NullMove() {
+    assertThrows(NullPointerException.class, () -> gameMap.moveAdventurer(null),
+        "Should throw a NullPointerException on attempting to move with a null Move");
   }
 
   // 3 - initial position of the Adventurer is impossible
@@ -230,7 +235,7 @@ class GameMapTest {
           .thenReturn("Invalid adventurer location");
 
       // WHEN
-      gameMap.moveAdventurer(1, 1);
+      gameMap.moveAdventurer(Move.RIGHT);
       // THEN
       // Verifying that the method handleInvalidGameState was called
       try {

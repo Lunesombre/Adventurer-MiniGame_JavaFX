@@ -1,5 +1,8 @@
 package game.adventurer.model.base;
 
+import game.adventurer.model.enums.Direction;
+import game.adventurer.model.enums.Move;
+import java.util.Random;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import lombok.Getter;
@@ -19,6 +22,7 @@ public abstract class Creature {
   protected long lastMoveTime = 0;
   protected int previousTileX;
   protected int previousTileY;
+  protected Direction facingDirection;
 
   private static final int DEFAULT_HEALTH = 10;
   private static final int DEFAULT_MOVE_SPEED = 1;
@@ -30,6 +34,7 @@ public abstract class Creature {
     this.tileY = tileY;
     this.health = new SimpleIntegerProperty(health);
     this.moveSpeed = moveSpeed;
+    this.facingDirection = Direction.values()[new Random().nextInt(Direction.values().length)]; // creates a random facing Direction
   }
 
   protected Creature(String name, int tileX, int tileY) {
@@ -51,13 +56,13 @@ public abstract class Creature {
     this.health.set(health);
   }
 
-  public boolean move(int dx, int dy) {
+  public boolean move(Move move) {
     long currentTime = System.currentTimeMillis();
     if (lastMoveTime + 300 < currentTime) {
       this.previousTileX = this.tileX;
       this.previousTileY = this.tileY;
-      this.tileX += dx;
-      this.tileY += dy;
+      this.tileX += move.getDx();
+      this.tileY += move.getDy();
       lastMoveTime = currentTime;
       return true;
     }
