@@ -1,7 +1,6 @@
-package game.adventurer.model;
+package game.adventurer.model.wound;
 
-import game.adventurer.model.base.Creature;
-import game.adventurer.model.base.Wound;
+import game.adventurer.model.creature.Creature;
 import game.adventurer.model.enums.WoundCause;
 import java.util.Random;
 

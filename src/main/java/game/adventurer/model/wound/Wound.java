@@ -1,6 +1,7 @@
-package game.adventurer.model.base;
+package game.adventurer.model.wound;
 
 
+import game.adventurer.model.creature.Creature;
 import game.adventurer.model.enums.WoundCause;
 import lombok.Getter;
 import lombok.Setter;

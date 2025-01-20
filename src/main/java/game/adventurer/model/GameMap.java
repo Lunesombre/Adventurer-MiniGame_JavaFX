@@ -4,11 +4,14 @@ import static game.adventurer.util.MiscUtil.handleInvalidGameState;
 
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Tile.Type;
-import game.adventurer.model.base.Creature;
-import game.adventurer.model.base.Wound;
+import game.adventurer.model.creature.Adventurer;
+import game.adventurer.model.creature.Creature;
+import game.adventurer.model.creature.Monster;
 import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.model.enums.WoundCause;
+import game.adventurer.model.wound.WoodsWound;
+import game.adventurer.model.wound.Wound;
 import game.adventurer.service.LocalizedMessageService;
 import java.util.ArrayList;
 import java.util.List;
