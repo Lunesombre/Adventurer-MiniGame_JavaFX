@@ -1,6 +1,4 @@
-package game.adventurer.model;
-
-import game.adventurer.model.base.Creature;
+package game.adventurer.model.creature;
 
 public class Monster extends Creature {
 

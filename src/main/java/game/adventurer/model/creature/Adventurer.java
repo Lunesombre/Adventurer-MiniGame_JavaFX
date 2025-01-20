@@ -1,6 +1,5 @@
-package game.adventurer.model;
+package game.adventurer.model.creature;
 
-import game.adventurer.model.base.Creature;
 import lombok.Getter;
 
 @Getter

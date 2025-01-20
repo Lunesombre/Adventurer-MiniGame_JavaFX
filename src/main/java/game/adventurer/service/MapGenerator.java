@@ -1,11 +1,11 @@
 package game.adventurer.service;
 
 import game.adventurer.exceptions.NoValidRangeException;
-import game.adventurer.model.Adventurer;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
+import game.adventurer.model.creature.Adventurer;
 import game.adventurer.util.PathfindingUtil;
 import java.util.ArrayList;
 import java.util.List;

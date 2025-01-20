@@ -4,7 +4,7 @@ import game.adventurer.common.Localizable;
 import game.adventurer.common.SharedSize;
 import game.adventurer.config.AppConfig;
 import game.adventurer.model.GameMap;
-import game.adventurer.model.base.Wound;
+import game.adventurer.model.wound.Wound;
 import game.adventurer.service.LocalizedMessageService;
 import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.CreditsOverlay;

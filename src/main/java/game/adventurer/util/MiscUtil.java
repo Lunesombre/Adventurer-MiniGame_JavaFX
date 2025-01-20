@@ -2,12 +2,12 @@ package game.adventurer.util;
 
 import game.adventurer.config.AppConfig;
 import game.adventurer.exceptions.InvalidGameStateException;
-import game.adventurer.model.Adventurer;
 import game.adventurer.model.GameMap;
-import game.adventurer.model.Monster;
 import game.adventurer.model.Position;
 import game.adventurer.model.Tile.Type;
-import game.adventurer.model.base.Creature;
+import game.adventurer.model.creature.Adventurer;
+import game.adventurer.model.creature.Creature;
+import game.adventurer.model.creature.Monster;
 import game.adventurer.model.enums.Direction;
 import java.util.HashSet;
 import java.util.Objects;

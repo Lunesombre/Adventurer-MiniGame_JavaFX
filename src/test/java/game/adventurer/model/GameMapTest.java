@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.Tile.Type;
+import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.service.LocalizedMessageService;

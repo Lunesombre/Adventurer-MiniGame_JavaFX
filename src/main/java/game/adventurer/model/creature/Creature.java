@@ -1,4 +1,4 @@
-package game.adventurer.model.base;
+package game.adventurer.model.creature;
 
 import game.adventurer.model.enums.Direction;
 import game.adventurer.model.enums.Move;
