@@ -28,11 +28,11 @@ public enum Direction {
 
   public abstract Direction getOpposite();
 
-  public Direction turnClockwise() {
+  public Direction turnQuarterClockwise() {
     return values()[(this.ordinal() + 1) % values().length];
   }
 
-  public Direction turnCounterClockwise() {
+  public Direction turnQuarterCounterClockwise() {
     return values()[(this.ordinal() - 1 + values().length) % values().length];
   }
 }

@@ -106,9 +106,15 @@ public class AdventurerGameApp extends Application {
     try {
       GameMap gameMap = MapGenerator.generateMap(mapSize.getSize(), mapSize.getSize(), playerName);
       MainGameScene mainGameScene = MainGameScene.create(gameMap, sharedSize, difficultyLevel, localizationService, hostServices);
-      mainGameScene.setOnGameEnd(() -> showEndGame(gameMap, mainGameScene.getMovesCount(), mainGameScene.getDifficultyLevel(),
-          mainGameScene.getInitialDistanceToTreasure()));
-      mainGameScene.setOnGameOver(() -> showGameOver(gameMap));
+      mainGameScene.setOnGameEnd(() -> {
+        mainGameScene.stopActiveTimelines();
+        showEndGame(gameMap, mainGameScene.getMovesCount(), mainGameScene.getDifficultyLevel(),
+            mainGameScene.getInitialDistanceToTreasure());
+      });
+      mainGameScene.setOnGameOver(() -> {
+        mainGameScene.stopActiveTimelines();
+        showGameOver(gameMap);
+      });
       primaryStage.setScene(mainGameScene);
       log.info("Starting game with player: {}, and map size: {}", playerName, mapSize);
     } catch (NoValidRangeException e) {

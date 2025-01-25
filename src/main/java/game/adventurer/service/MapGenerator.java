@@ -1,11 +1,13 @@
 package game.adventurer.service;
 
 import game.adventurer.exceptions.NoValidRangeException;
+import game.adventurer.model.CreatureMovementHandler;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
+import game.adventurer.model.creature.Mugger;
 import game.adventurer.util.PathfindingUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ public class MapGenerator {
     GameMap map;
     Adventurer adventurer;
     Treasure treasure;
+    CreatureMovementHandler movementHandler;
     int loopCounter = 0;
     do {
       loopCounter += 1;
@@ -88,6 +91,17 @@ public class MapGenerator {
     } while (!checkPath(map, adventurer, treasure));
     LOG.info("LoopCount = {}", loopCounter);
     LOG.debug("The map: {}", map);
+
+    // CreatureMovementHandler creation
+    movementHandler = new CreatureMovementHandler(map);
+    for (int i = 0; i < width; i++) {
+      if (Tile.Type.PATH == map.getTileTypeAt(i, 0)) {
+        // Adds a Monster on first tile that is a PATH tile, then breaks
+        map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
+        break;
+      }
+    }
+
     return map;
   }
 
