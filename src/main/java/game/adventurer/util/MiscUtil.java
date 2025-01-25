@@ -8,6 +8,7 @@ import game.adventurer.model.Tile.Type;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
+import game.adventurer.model.creature.Mugger;
 import game.adventurer.model.enums.Direction;
 import java.util.HashSet;
 import java.util.Objects;
@@ -232,7 +233,7 @@ public class MiscUtil {
    * @param p2 The second position.
    * @return The Manhattan distance between the two positions.
    */
-  private static int getDistance(Position p1, Position p2) {
+  public static int getDistance(Position p1, Position p2) {
     return Math.abs(p1.x() - p2.x()) + Math.abs(p1.y() - p2.y());
   }
 
@@ -256,6 +257,13 @@ public class MiscUtil {
           return 3; // Backward
         } else {
           return 4; // Sides
+        }
+      }
+      case Mugger ignored -> {
+        if (currentDirection == facingDirection) {
+          return 4; // Frontward
+        } else {
+          return 2; //other directions
         }
       }
       default -> {
@@ -292,5 +300,9 @@ public class MiscUtil {
    */
   public static boolean isOutOfMapBounds(GameMap gameMap, int x, int y) {
     return x < 0 || x >= gameMap.getMapWidth() || y < 0 || y >= gameMap.getMapHeight();
+  }
+
+  public static boolean isOutOfMapBounds(GameMap gameMap, Position position) {
+    return isOutOfMapBounds(gameMap, position.x(), position.y());
   }
 }

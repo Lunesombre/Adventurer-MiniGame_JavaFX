@@ -1,8 +1,11 @@
 package game.adventurer.model.creature;
 
+import game.adventurer.model.Position;
+import game.adventurer.model.Tile.Type;
 import game.adventurer.model.enums.Direction;
-import game.adventurer.model.enums.Move;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import lombok.Getter;
@@ -23,6 +26,9 @@ public abstract class Creature {
   protected int previousTileX;
   protected int previousTileY;
   protected Direction facingDirection;
+  protected Set<Type> allowedTileTypes;
+  protected MovementHandler movementHandler;
+  protected Set<Position> visibleTiles = new HashSet<>();
 
   private static final int DEFAULT_HEALTH = 10;
   private static final int DEFAULT_MOVE_SPEED = 1;
@@ -56,17 +62,4 @@ public abstract class Creature {
     this.health.set(health);
   }
 
-  public boolean move(Move move) {
-    long currentTime = System.currentTimeMillis();
-    if (lastMoveTime + 300 < currentTime) {
-      this.previousTileX = this.tileX;
-      this.previousTileY = this.tileY;
-      this.tileX += move.getDx();
-      this.tileY += move.getDy();
-      lastMoveTime = currentTime;
-      return true;
-    }
-    log.debug("Trying to move too early  :{}/300ms", currentTime - lastMoveTime);
-    return false;
-  }
 }

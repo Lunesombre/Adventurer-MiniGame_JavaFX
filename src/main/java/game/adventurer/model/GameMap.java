@@ -14,8 +14,10 @@ import game.adventurer.model.wound.WoodsWound;
 import game.adventurer.model.wound.Wound;
 import game.adventurer.service.LocalizedMessageService;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -30,8 +32,10 @@ public class GameMap {
   private int mapHeight;
   private Adventurer adventurer;
   private Treasure treasure;
+  private List<Monster> monsters = new ArrayList<>();
   private static final Logger LOG = LoggerFactory.getLogger(GameMap.class);
   private List<Wound> woundsList;
+  private Set<Position> occupiedTiles = new HashSet<>();
 
   public GameMap(Tile[][] grid, int mapWidth, int mapHeight, Adventurer adventurer, Treasure treasure) {
     this.grid = grid;
@@ -113,8 +117,9 @@ public class GameMap {
         return position.x() >= 0 && position.x() < mapWidth && position.y() >= 0 && position.y() < mapHeight
             && getTileTypeAt(position.x(), position.y()) == Type.PATH;
       }
-      case Monster ignored -> {
-        return position.x() >= 0 && position.x() < mapWidth && position.y() >= 0 && position.y() < mapHeight;
+      case Monster monster -> {
+        return position.x() >= 0 && position.x() < mapWidth && position.y() >= 0 && position.y() < mapHeight
+            && monster.getAllowedTileTypes().contains(getTileTypeAt(position.x(), position.y()));
       }
       default -> {
         return false;
@@ -129,5 +134,23 @@ public class GameMap {
   public Type getTileTypeAt(int x, int y) {
     return Objects.requireNonNull(grid[y][x].getType(), "Tile type cannot be null");
   }
+
+  public void addMonster(Monster monster) {
+    monsters.add(monster);
+  }
+
+  public boolean isTileOccupied(int x, int y) {
+    return occupiedTiles.contains(new Position(x, y));
+  }
+
+  // Methods to add/remove a Tile from occupiedTiles:
+  public void occupyTile(Position position) {
+    occupiedTiles.add(position);
+  }
+
+  public void freeTile(Position position) {
+    occupiedTiles.remove(position);
+  }
+  // TODO : ajouter usage de ces méthodes à chaque mouvement de Creature
 
 }

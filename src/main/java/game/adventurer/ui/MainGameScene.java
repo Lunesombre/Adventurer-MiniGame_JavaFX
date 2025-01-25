@@ -8,18 +8,23 @@ import game.adventurer.common.Localizable;
 import game.adventurer.common.SharedSize;
 import game.adventurer.controller.RightPanelController;
 import game.adventurer.exceptions.InvalidGameStateException;
+import game.adventurer.exceptions.MissingCreatureException;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Position;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
+import game.adventurer.model.creature.Creature;
+import game.adventurer.model.creature.Monster;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.Direction;
 import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
 import game.adventurer.service.LocalizationService;
 import game.adventurer.service.LocalizedMessageService;
+import game.adventurer.service.MonsterBehaviorManager;
+import game.adventurer.ui.animation.CreatureAnimationManager;
 import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.CreditsOverlay;
 import game.adventurer.ui.common.OptionsPanel;
@@ -28,11 +33,14 @@ import game.adventurer.ui.common.option.KeyBindingOption;
 import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.ui.common.option.ScoreBoardOption;
 import game.adventurer.util.PathfindingUtil;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -95,8 +103,12 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private Circle adventurerCircle;
   private Group treasureCross;
+  private Circle testMuggerRepresentation;
+  @Getter
   private double tileSize;
+  @Getter
   private double xOffset;
+  @Getter
   private double yOffset;
   @Getter
   private int movesCount;
@@ -120,6 +132,11 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private Rectangle[][] tileRectangles; // 2D array to store references to the mapView rectangles
   private Set<Position> visibleTiles; // Positions of the Tiles that the Adventurer has in its field of view
+
+  private final List<Timeline> activeTimelines = new ArrayList<>(); // stores timelines to properly handle them on scene change
+  private final Map<Creature, Node> creaturesRepresentationMap = new HashMap<>(); // stores link between a Creature the Node representing it
+  private CreatureAnimationManager creatureAnimationManager;
+  private MonsterBehaviorManager monsterBehaviorManager;
 
   /*
   Localizable elements
@@ -152,6 +169,7 @@ public class MainGameScene extends BaseScene implements Localizable {
   @Override
   protected void initialize() throws InvalidGameStateException {
     initialHealth = gameMap.getAdventurer().getHealth();
+    this.visibleTiles = gameMap.getAdventurer().getVisibleTiles(); // visibleTiles references the set in Adventurer
     double windowWidth = sharedSize.getWidth();
     double windowHeight = sharedSize.getHeight();
     initialDistanceToTreasure = calculateMovesToTreasure();
@@ -261,6 +279,13 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     // Register this class as Localizable - done after the localizable texts are set to avoid Null Pointer Exception.
     localizationService.registerLocalizable(this);
+
+    creatureAnimationManager = new CreatureAnimationManager(this);
+    monsterBehaviorManager = new MonsterBehaviorManager(gameMap, creaturesRepresentationMap, activeTimelines);
+    startGameLoop();
+    startMonsterMovement();
+
+
   }
 
   @Override
@@ -346,22 +371,18 @@ public class MainGameScene extends BaseScene implements Localizable {
     return switch (keyCode) {
       case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.up") -> {
         gameMap.getAdventurer().setFacingDirection(Direction.NORTH);
-        updateGameView();
         yield gameMap.moveAdventurer(Move.UP);
       }
       case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.down") -> {
         gameMap.getAdventurer().setFacingDirection(Direction.SOUTH);
-        updateGameView();
         yield gameMap.moveAdventurer(Move.DOWN);
       }
       case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.left") -> {
         gameMap.getAdventurer().setFacingDirection(Direction.WEST);
-        updateGameView();
         yield gameMap.moveAdventurer(Move.LEFT);
       }
       case KeyCode ignored when keyCode == bindings.get("option.kb.binding.label.right") -> {
         gameMap.getAdventurer().setFacingDirection(Direction.EAST);
-        updateGameView();
         yield gameMap.moveAdventurer(Move.RIGHT);
       }
       default -> MoveResult.BLOCKED;
@@ -380,7 +401,7 @@ public class MainGameScene extends BaseScene implements Localizable {
   private void handleSuccessfulMove() {
     movesCount++;
     // start animation
-    animateCreatureMove(adventurerCircle,
+    creatureAnimationManager.animateCreature(adventurerCircle,
         gameMap.getAdventurer().getPreviousTileX(),
         gameMap.getAdventurer().getPreviousTileY(),
         gameMap.getAdventurer().getTileX(),
@@ -398,41 +419,6 @@ public class MainGameScene extends BaseScene implements Localizable {
       }
     }
   }
-
-  private void animateCreatureMove(Node creatureRepresentation, int fromX, int fromY, int toX, int toY) {
-    // FRAMES * FRAME_DURATION_MS should be equal to the duration used in Creature.move
-    final int FRAMES = 60;
-    final int FRAME_DURATION_MS = 5;
-    if (creatureRepresentation instanceof Circle circle) {
-      double startX = xOffset + (fromX + 0.5) * tileSize;
-      double startY = yOffset + (fromY + 0.5) * tileSize;
-      double endX = xOffset + (toX + 0.5) * tileSize;
-      double endY = yOffset + (toY + 0.5) * tileSize;
-
-      double dx = (endX - startX) / FRAMES;
-      double dy = (endY - startY) / FRAMES;
-
-      Timeline timeline = new Timeline();
-      for (int i = 1; i <= FRAMES; i++) {
-        final int frame = i;
-        KeyFrame keyFrame = new KeyFrame(
-            Duration.millis(i * (double) FRAME_DURATION_MS),
-            event -> {
-              circle.setCenterX(startX + dx * frame);
-              circle.setCenterY(startY + dy * frame);
-            }
-        );
-        timeline.getKeyFrames().add(keyFrame);
-      }
-      timeline.setOnFinished(event -> updateGameView()); // corrects the position and size of the creature representation
-      // if the window has been resized during movement
-      timeline.play();
-    } else {
-      log.error("Unhandled Creature representation");
-    }
-
-  }
-
 
   private void handleWoundedMove() {
     showDamageEffect();
@@ -501,8 +487,25 @@ public class MainGameScene extends BaseScene implements Localizable {
     line1.setStrokeWidth(tileSize / 20);
     line2.setStrokeWidth(tileSize / 20);
 
+    // update size and position of Monsters
+    for (Monster monster : gameMap.getMonsters()) {
+      Node visualRep = creaturesRepresentationMap.get(monster);
+      switch (visualRep) {
+        case Circle circle -> {
+          circle.setRadius(tileSize / 2);
+          circle.setCenterX(xOffset + (monster.getTileX() + 0.5) * tileSize);
+          circle.setCenterY(yOffset + (monster.getTileY() + 0.5) * tileSize);
+        }
+        default -> throw new IllegalStateException("Unhandled Node type : " + visualRep);
+      }
+    }
+
     // Set Adventurer field of View visually
-    updateFieldOfView();
+    updateAdventurerFieldOfView();
+
+    // displays/hide testMuggerRepresentation
+    Position muggerPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
+    testMuggerRepresentation.setVisible(visibleTiles.contains(muggerPos));
 
     log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
         gameMap.getAdventurer().getTileX(),
@@ -526,8 +529,6 @@ public class MainGameScene extends BaseScene implements Localizable {
       }
     }
 
-    updateGameView();
-
 //    // Forcing a visual update
     mapView.requestLayout();
   }
@@ -545,7 +546,7 @@ public class MainGameScene extends BaseScene implements Localizable {
       for (int x = 0; x < mapWidth; x++) {
         Tile tile = gameMap.getGrid()[y][x];
         Rectangle rect = new Rectangle(tileSize, tileSize);
-        rect.setFill(tile.getType() == Tile.Type.PATH ? Color.web("#B87065") : Color.web("#206600"));
+        rect.setFill(tile.getType() == Type.PATH ? Color.web("#B87065") : Color.web("#206600"));
         rect.setX(xOffset + x * tileSize);
         rect.setY(yOffset + y * tileSize);
         rect.setStroke(Color.web("#4a5246")); // grey-greenish tile border
@@ -584,13 +585,24 @@ public class MainGameScene extends BaseScene implements Localizable {
     mapView.getChildren().add(adventurerCircle);
 
     // Adding initial field of view representation
-    visibleTiles = calculateFieldOfView(gameMap.getAdventurer(), gameMap);
+    visibleTiles.addAll(calculateFieldOfView(gameMap.getAdventurer(), gameMap));
     for (Position pos : visibleTiles) {
       Rectangle rect = tileRectangles[pos.y()][pos.x()];
       if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Type.PATH) {
         rect.setFill(Color.web("#D8A095"));
       }
     }
+
+    // Adding testMuggerRepresentation
+    testMuggerRepresentation = new Circle(tileSize / 2, Color.RED);
+    double maDvX = xOffset + (gameMap.getMonsters().getFirst().getTileX() + 0.5) * tileSize;
+    double maDvY = yOffset + (gameMap.getMonsters().getFirst().getTileY() + 0.5) * tileSize;
+    testMuggerRepresentation.setCenterX(maDvX);
+    testMuggerRepresentation.setCenterY(maDvY);
+    mapView.getChildren().add(testMuggerRepresentation);
+    creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMuggerRepresentation);
+    testMuggerRepresentation.setVisible(false);
+
     handleResize();
   }
 
@@ -654,7 +666,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     playerNameLabel.getStyleClass().add(MEDIEVAL_FONT);
     playerNameBox.setAlignment(Pos.CENTER);
     playerNameBox.getChildren().add(playerNameLabel);
-    playerNameBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
+    playerNameBox.setBackground(new Background(new BackgroundFill(rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
 
     HBox imageBox = new HBox();
     imageBox.setAlignment(Pos.CENTER);
@@ -679,7 +691,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     DropShadow borderGlow = new DropShadow();
     borderGlow.setOffsetY(0f);
     borderGlow.setOffsetX(0f);
-    borderGlow.setColor(Color.rgb(195, 130, 0));
+    borderGlow.setColor(rgb(195, 130, 0));
     borderGlow.setRadius(15.0);
     borderGlow.setSpread(0.9);
     borderGlow.setWidth(30);
@@ -694,7 +706,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     statsLabel.setStyle("-fx-font-size: 30px; -fx-text-fill: #ffc400");
     statsLabel.getStyleClass().add(MEDIEVAL_FONT);
     statsLabel.setPadding(new Insets(16));
-    statsBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
+    statsBox.setBackground(new Background(new BackgroundFill(rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
 
     HBox healthBox = new HBox(20);
     healthBox.setAlignment(Pos.CENTER);
@@ -703,7 +715,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     heart.setPreserveRatio(true);
     Text playerHealth = new Text();
     playerHealth.setStyle("-fx-font-weight: bold");
-    playerHealth.setFill(Color.rgb(0, 120, 0));
+    playerHealth.setFill(rgb(0, 120, 0));
     Bloom bloom = new Bloom(0.1);
     playerHealth.setEffect(bloom);
     playerHealth.textProperty().bind(gameMap.getAdventurer().healthProperty().asString());
@@ -755,7 +767,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     VBox messagesBox = new VBox(5);
     messagesBox.setPadding(new Insets(20));
-    messagesBox.setBackground(new Background(new BackgroundFill(Color.rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
+    messagesBox.setBackground(new Background(new BackgroundFill(rgb(80, 80, 80, 0.6), new CornerRadii(15.0), Insets.EMPTY)));
     messagesBox.setMinSize(MESSAGE_BOX_MIN_WIDTH, MESSAGE_BOX_MIN_HEIGHT);
     // Initialize the messages' controller
     rightPanelController.initMessagesBox(messagesBox);
@@ -841,13 +853,13 @@ public class MainGameScene extends BaseScene implements Localizable {
       double healthPercentage = (double) currentHealth / initialHealth;
 
       if (healthPercentage > 0.7) {
-        playerHealth.setFill(Color.rgb(0, 120, 0)); // Green : > 70%
+        playerHealth.setFill(rgb(0, 120, 0)); // Green : > 70%
       } else if (healthPercentage > 0.5) {
-        playerHealth.setFill(Color.rgb(175, 160, 0)); // Yellow : > 50%
+        playerHealth.setFill(rgb(175, 160, 0)); // Yellow : > 50%
       } else if (healthPercentage > 0.3) {
-        playerHealth.setFill(Color.rgb(190, 115, 0)); // Orange : > 30%
+        playerHealth.setFill(rgb(190, 115, 0)); // Orange : > 30%
       } else {
-        playerHealth.setFill(Color.rgb(195, 0, 0)); // Red : <= 30%
+        playerHealth.setFill(rgb(195, 0, 0)); // Red : <= 30%
       }
     });
   }
@@ -946,7 +958,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     rightPanelController.updateLanguage(newLocale);
   }
 
-  private void updateFieldOfView() {
+  private void updateAdventurerFieldOfView() {
     Set<Position> newVisibleTiles = calculateFieldOfView(gameMap.getAdventurer(), gameMap);
     Set<Position> previouslyVisibleTiles = new HashSet<>(visibleTiles);
 
@@ -954,7 +966,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     for (Position pos : previouslyVisibleTiles) {
       if (!newVisibleTiles.contains(pos)) {
         Rectangle rect = tileRectangles[pos.y()][pos.x()];
-        if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Tile.Type.PATH) {
+        if (gameMap.getTileTypeAt(pos.x(), pos.y()) == Type.PATH) {
           rect.setFill(Color.web("#B87065")); // Original PATH color
         }
       }
@@ -967,8 +979,31 @@ public class MainGameScene extends BaseScene implements Localizable {
       }
     }
     // Update the stored visible tiles
-    visibleTiles = newVisibleTiles;
+    visibleTiles.clear();
+    visibleTiles.addAll(newVisibleTiles);
   }
+
+  private void startMonsterMovement() throws MissingCreatureException {
+    monsterBehaviorManager.moveMonsters(creatureAnimationManager);
+  }
+
+  public void stopActiveTimelines() {
+    for (Timeline timeline : activeTimelines) {
+      timeline.stop();
+      log.info("Timeline {} stopped", timeline);
+    }
+    activeTimelines.clear(); // Clears list
+  }
+
+  private void startGameLoop() {
+    final int refreshRate = 60;
+    Timeline gameLoop = new Timeline(new KeyFrame(Duration.millis(1000.0 / refreshRate), event -> updateGameView()));
+    gameLoop.setCycleCount(Animation.INDEFINITE); // Infinitely loops as long as gameLoop isn't stopped.
+    activeTimelines.add(gameLoop);
+    gameLoop.play();
+  }
+
+
 }
 
 
