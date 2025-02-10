@@ -9,6 +9,7 @@ import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
 import game.adventurer.model.creature.Mugger;
+import game.adventurer.model.creature.Sniffer;
 import game.adventurer.model.enums.Direction;
 import java.util.HashSet;
 import java.util.Objects;
@@ -140,6 +141,8 @@ public class MiscUtil {
     // TODO: update when new Creatures are ... created, hehe
     int maxDistance = switch (creature) {
       case Adventurer ignored -> 5; // 5 as 5 is the max an Adventurer can "see" in the best direction (frontward)
+      case Sniffer ignored -> 8;
+      case Mugger ignored -> 4;
       case Monster ignored -> 8;
       default -> throw new IllegalStateException("Unexpected value: " + creature);
     };
@@ -249,6 +252,7 @@ public class MiscUtil {
     Direction facingDirection = creature.getFacingDirection();
 
     Direction currentDirection = getDirectionBetween(startPosition, currentlyCheckedPosition);
+    // TODO: update when new type of Creature created
     switch (creature) {
       case Adventurer ignored -> {
         if (currentDirection == facingDirection) {
@@ -265,6 +269,9 @@ public class MiscUtil {
         } else {
           return 2; //other directions
         }
+      }
+      case Sniffer ignored -> {
+        return 6; // Detection based on "smell" not "sight"
       }
       default -> {
         return -1;

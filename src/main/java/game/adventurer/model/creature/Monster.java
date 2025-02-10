@@ -6,6 +6,7 @@ import game.adventurer.model.Position;
 import game.adventurer.model.enums.Direction;
 import game.adventurer.model.enums.MonsterStatus;
 import game.adventurer.model.enums.Move;
+import game.adventurer.util.PathfindingUtil;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -50,9 +51,28 @@ public abstract class Monster extends Creature {
 
   protected abstract boolean wander();
 
-  protected abstract void pursue(GameMap gameMap) throws InvalidGameStateException;
-
   protected abstract void search(GameMap gameMap);
+
+  public void pursue(GameMap gameMap) throws InvalidGameStateException {
+    if (status.equals(MonsterStatus.ALERTED) && canMove()) {
+      if (lastSeenAdventurerPosition != null) {
+        previousTileX = tileX;
+        previousTileY = tileY;
+        // uses PathfindingUtil to find the next tile to go get the Adventurer
+        LinkedHashSet<Position> pathToAdventurer =
+            (LinkedHashSet<Position>) PathfindingUtil.shortestPath(this, new Position(this.getTileX(), this.getTileY()), lastSeenAdventurerPosition,
+                gameMap);
+        // move to this tile
+        if (!pathToAdventurer.isEmpty()) {
+          moveTo(pathToAdventurer.getFirst());
+          pathToAdventurer.removeFirst(); // removes the Position where the Monster arrives
+        }
+      } else {
+        throw new InvalidGameStateException(this.getName() + " has no lastSeenAdventurerPosition when it should.");
+      }
+    }
+
+  }
 
 
   protected void randomMove() {
@@ -129,6 +149,7 @@ public abstract class Monster extends Creature {
     this.setStatus(MonsterStatus.NEUTRAL);
     this.lastSeenAdventurerPosition = null;
     this.storedFOV.clear();
+    this.searchTarget = null;
     log.info("{} is now chilling", this.name);
   }
 

@@ -4,12 +4,10 @@ import static game.adventurer.util.PathfindingUtil.getValidNeighbor;
 import static game.adventurer.util.PathfindingUtil.shortestDistance;
 import static game.adventurer.util.PathfindingUtil.shortestPath;
 
-import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Position;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.enums.MonsterStatus;
-import game.adventurer.util.PathfindingUtil;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +34,9 @@ public class Mugger extends Monster {
   public boolean canMove() {
     long currentTime = System.currentTimeMillis();
     return switch (status) {
-      case NEUTRAL -> // 500 ms between moves
-          lastMoveTime + 500 < currentTime;
-      case ALERTED -> lastMoveTime + 600 < currentTime; // moves as fast as the Adventurer
-
-      case IN_SEARCH -> lastMoveTime + 800 < currentTime; // moves a little slower but still faster than in NEUTRAL status
-
+      case NEUTRAL -> lastMoveTime + 500 < currentTime; // 500 ms between moves
+      case ALERTED -> lastMoveTime + 600 < currentTime;
+      case IN_SEARCH -> lastMoveTime + 800 < currentTime;
     };
   }
 
@@ -64,29 +59,6 @@ public class Mugger extends Monster {
     }
     return false;
   }
-
-  @Override
-  public void pursue(GameMap gameMap) throws InvalidGameStateException {
-    if (status.equals(MonsterStatus.ALERTED) && canMove()) {
-      if (lastSeenAdventurerPosition != null) {
-        previousTileX = tileX;
-        previousTileY = tileY;
-        // uses PathfindingUtil to find the next tile to go get the Adventurer
-        LinkedHashSet<Position> pathToAdventurer =
-            (LinkedHashSet<Position>) PathfindingUtil.shortestPath(this, new Position(this.getTileX(), this.getTileY()), lastSeenAdventurerPosition,
-                gameMap);
-        // move to this tile
-        if (!pathToAdventurer.isEmpty()) {
-          moveTo(pathToAdventurer.getFirst());
-          pathToAdventurer.removeFirst(); // removes the Position where the Monster arrives
-        }
-      } else {
-        throw new InvalidGameStateException(this.getName() + " has no lastSeenAdventurerPosition when it should.");
-      }
-    }
-
-  }
-
 
   /**
    * Executes the search behavior for the monster on the game map.
