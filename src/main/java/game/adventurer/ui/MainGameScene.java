@@ -17,6 +17,8 @@ import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
+import game.adventurer.model.creature.Mugger;
+import game.adventurer.model.creature.Sniffer;
 import game.adventurer.model.enums.DifficultyLevel;
 import game.adventurer.model.enums.Direction;
 import game.adventurer.model.enums.Move;
@@ -103,7 +105,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private Circle adventurerCircle;
   private Group treasureCross;
-  private Circle testMuggerRepresentation;
+  private Circle testMonsterRepresentation;
   @Getter
   private double tileSize;
   @Getter
@@ -503,9 +505,9 @@ public class MainGameScene extends BaseScene implements Localizable {
     // Set Adventurer field of View visually
     updateAdventurerFieldOfView();
 
-    // displays/hide testMuggerRepresentation
-    Position muggerPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
-    testMuggerRepresentation.setVisible(visibleTiles.contains(muggerPos));
+    // displays/hide testMonsterRepresentation
+    Position monsterPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
+    testMonsterRepresentation.setVisible(visibleTiles.contains(monsterPos));
 
     log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
         gameMap.getAdventurer().getTileX(),
@@ -593,15 +595,21 @@ public class MainGameScene extends BaseScene implements Localizable {
       }
     }
 
-    // Adding testMuggerRepresentation
-    testMuggerRepresentation = new Circle(tileSize / 2, Color.RED);
+    // Adding testMonsterRepresentation
+    testMonsterRepresentation = new Circle(tileSize / 2, Color.RED);
     double maDvX = xOffset + (gameMap.getMonsters().getFirst().getTileX() + 0.5) * tileSize;
     double maDvY = yOffset + (gameMap.getMonsters().getFirst().getTileY() + 0.5) * tileSize;
-    testMuggerRepresentation.setCenterX(maDvX);
-    testMuggerRepresentation.setCenterY(maDvY);
-    mapView.getChildren().add(testMuggerRepresentation);
-    creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMuggerRepresentation);
-    testMuggerRepresentation.setVisible(false);
+    testMonsterRepresentation.setCenterX(maDvX);
+    testMonsterRepresentation.setCenterY(maDvY);
+    mapView.getChildren().add(testMonsterRepresentation);
+    Monster monster = gameMap.getMonsters().getFirst();
+    if (monster instanceof Mugger) {
+      testMonsterRepresentation.setFill(Color.RED);
+    } else if (monster instanceof Sniffer) {
+      testMonsterRepresentation.setFill(Color.YELLOW);
+    }
+    creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMonsterRepresentation);
+    testMonsterRepresentation.setVisible(false);
 
     handleResize();
   }

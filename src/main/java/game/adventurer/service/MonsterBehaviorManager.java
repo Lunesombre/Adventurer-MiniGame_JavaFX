@@ -11,6 +11,7 @@ import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
 import game.adventurer.model.creature.Mugger;
+import game.adventurer.model.creature.Sniffer;
 import game.adventurer.model.enums.MonsterStatus;
 import game.adventurer.ui.animation.CreatureAnimationManager;
 import game.adventurer.util.MiscUtil;
@@ -170,6 +171,104 @@ public class MonsterBehaviorManager {
               mugger.setStatus(MonsterStatus.ALERTED);
               log.info(STATUS_CHANGE_MESSAGE, mugger.getName(), adventurer.getTileX(), adventurer.getTileY(),
                   mugger.getStatus());
+            }
+          }
+
+        }));
+
+        // Repeats indefinitely until the Timeline is stopped
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+        activeTimelines.add(timeline);
+
+      }
+      if (monster instanceof Sniffer sniffer) {
+        if (!creaturesRepresentationMap.containsKey(sniffer)) {
+          throw new MissingCreatureException("Creature " + sniffer.getName() + " not found in the creaturesRepresentationMap");
+        }
+        log.info("The monster '{}' started moving", sniffer.getName());
+
+        // Creates Timelines to move the Monsters
+        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> {
+
+          if (sniffer.getStatus().equals(MonsterStatus.NEUTRAL) && sniffer.canMove()) {
+            boolean triggerAnimation = sniffer.wander();
+            if (triggerAnimation) {
+              creatureAnimationManager.animateCreature(
+                  creaturesRepresentationMap.get(sniffer),
+                  sniffer.getPreviousTileX(),
+                  sniffer.getPreviousTileY(),
+                  sniffer.getTileX(),
+                  sniffer.getTileY()
+              );
+              // calculates and updates the monster's field of view after move
+              calculateMonsterFieldOfView(sniffer);
+              // checks if it sees the Adventurer
+              if (detectAdventurer(sniffer, adventurer)) {
+                Position adventurerPosition = new Position(adventurer.getTileX(), adventurer.getTileY());
+                sniffer.setLastSeenAdventurerPosition(adventurerPosition);
+                sniffer.setStatus(MonsterStatus.ALERTED);
+                log.info(STATUS_CHANGE_MESSAGE, sniffer.getName(), adventurer.getTileX(), adventurer.getTileY(),
+                    sniffer.getStatus());
+              }
+            }
+
+            log.trace("{} position : y={}, x={}, direction:{}", sniffer.getName(), sniffer.getTileY(), sniffer.getTileX(),
+                sniffer.getFacingDirection());
+          } else if (sniffer.getStatus().equals(MonsterStatus.ALERTED) && sniffer.canMove()) {
+            try {
+              sniffer.pursue(gameMap);
+              creatureAnimationManager.animateCreature(
+                  creaturesRepresentationMap.get(sniffer),
+                  sniffer.getPreviousTileX(),
+                  sniffer.getPreviousTileY(),
+                  sniffer.getTileX(),
+                  sniffer.getTileY()
+              );
+              // calculates and updates the monster's field of view after move
+              calculateMonsterFieldOfView(sniffer);
+              // checks if it sees the Adventurer
+              Position adventurerPosition = new Position(adventurer.getTileX(), adventurer.getTileY());
+              if (detectAdventurer(sniffer, adventurer)) {
+                sniffer.setLastSeenAdventurerPosition(adventurerPosition);
+              } else {
+                sniffer.setStatus(MonsterStatus.IN_SEARCH);
+                sniffer.setSearchTarget(adventurerPosition);
+                log.info("{} has lost sight of Adventurer at {} and is now {} ", sniffer.getName(), adventurerPosition,
+                    sniffer.getStatus());
+              }
+
+            } catch (InvalidGameStateException e) {
+              log.error("pursue() called but: {}. Resetting the monster status to NEUTRAL ", e.getMessage());
+              sniffer.setStatus(MonsterStatus.NEUTRAL);
+            }
+
+          } else if (sniffer.getStatus().equals(MonsterStatus.IN_SEARCH) && sniffer.canMove() && sniffer.getLastSeenAdventurerPosition() != null) {
+            sniffer.search(gameMap);
+
+            creatureAnimationManager.animateCreature(
+                creaturesRepresentationMap.get(sniffer),
+                sniffer.getPreviousTileX(),
+                sniffer.getPreviousTileY(),
+                sniffer.getTileX(),
+                sniffer.getTileY()
+            );
+            // calculates and updates the monster's field of view after move
+            calculateMonsterFieldOfView(sniffer);
+            // checks if it sees the Adventurer
+            Position adventurerPosition = new Position(adventurer.getTileX(), adventurer.getTileY());
+            if (detectAdventurer(sniffer, adventurer)) {
+              sniffer.setSearchTarget(null);
+              sniffer.getSearchArea().clear(); // useless for now as per sniffer's search mechanism
+              sniffer.setLastSeenAdventurerPosition(adventurerPosition);
+              sniffer.setStatus(MonsterStatus.ALERTED);
+              log.info(STATUS_CHANGE_MESSAGE, sniffer.getName(), adventurer.getTileX(), adventurer.getTileY(),
+                  sniffer.getStatus());
+            } else if (sniffer.getStatus().equals(MonsterStatus.IN_SEARCH)) {
+              // potentially has chilled out if the Adventurer managed to get very far
+              sniffer.setSearchTarget(adventurerPosition);
+            } else {
+              sniffer.setSearchTarget(null);
             }
           }
 

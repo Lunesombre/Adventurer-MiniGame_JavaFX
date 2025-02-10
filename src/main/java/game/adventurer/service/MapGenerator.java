@@ -1,5 +1,7 @@
 package game.adventurer.service;
 
+import static game.adventurer.util.PathfindingUtil.hasPath;
+
 import game.adventurer.exceptions.NoValidRangeException;
 import game.adventurer.model.CreatureMovementHandler;
 import game.adventurer.model.GameMap;
@@ -7,8 +9,7 @@ import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
-import game.adventurer.model.creature.Mugger;
-import game.adventurer.util.PathfindingUtil;
+import game.adventurer.model.creature.Sniffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.random.RandomGenerator;
@@ -96,9 +97,15 @@ public class MapGenerator {
     movementHandler = new CreatureMovementHandler(map);
     for (int i = 0; i < width; i++) {
       if (Tile.Type.PATH == map.getTileTypeAt(i, 0)) {
-        // Adds a Monster on first tile that is a PATH tile, then breaks
-        map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
-        break;
+        // Adds a Monster on first tile that is a PATH tile, and has a path to the adventurer, then breaks
+        GameMap finalMap = map;
+        if (hasPath(adventurer.getTileX(), adventurer.getTileY(), i, 0, map.getMapWidth(), map.getMapHeight(),
+            (x, y) -> finalMap.getTileTypeAt(x, y) == Type.PATH)) {
+//          map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
+          map.addMonster(new Sniffer("Test Sniffer " + (i + 1), i, 0, movementHandler));
+          break;
+        }
+
       }
     }
 
@@ -107,7 +114,7 @@ public class MapGenerator {
 
   private static boolean checkPath(GameMap gameMap, Adventurer adventurer, Treasure treasure) {
     // Pathfinding algorithm: BFS (Breadth-First Search)
-    return PathfindingUtil.hasPath(
+    return hasPath(
         adventurer.getTileX(), adventurer.getTileY(),
         treasure.getTileX(), treasure.getTileY(),
         gameMap.getMapWidth(), gameMap.getMapHeight(),
