@@ -5,6 +5,7 @@ import static game.adventurer.util.MiscUtil.isOutOfMapBounds;
 
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Position;
+import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
@@ -208,7 +209,7 @@ public class PathfindingUtil {
       path.addFirst(current.position); // adds the position on the top of the queue
       current = current.parent;
     }
-    path.removeFirst(); // removes the current position the Creature is on from the path
+    path.removeFirst(); // removes the current position of the Creature from the path
     return new LinkedHashSet<>(path); // the path will be in correct order, from the target to the goal
   }
 
@@ -224,7 +225,7 @@ public class PathfindingUtil {
    * @param takeIntoAccountOccupiedTiles If true, only unoccupied tiles are considered valid.
    * @return A set of valid neighboring positions.
    */
-  private static Set<Position> getValidNeighbors(Position position, GameMap gameMap, Set<Type> allowedTileTypes,
+  public static Set<Position> getValidNeighbors(Position position, GameMap gameMap, Set<Type> allowedTileTypes,
       boolean takeIntoAccountOccupiedTiles) {
     Set<Position> neighbors = new HashSet<>();
 
@@ -397,4 +398,42 @@ public class PathfindingUtil {
     log.info("CalculatedSearchArea size : {}", searchArea);
     return searchArea;
   }
+
+  /**
+   * Finds the nearest tile of a given type from a starting position using a breadth-first search (BFS). This ensures the shortest path in terms of
+   * tile traversal is found.
+   *
+   * @param startPosition The starting position from which the search begins.
+   * @param gameMap       The game map containing the tiles.
+   * @param type          The tile type to search for.
+   * @return The position of the nearest tile of the specified type, or {@code null} if no such tile is found.
+   */
+  public static Position findNearestTileOfType(Position startPosition, GameMap gameMap, Tile.Type type) {
+    Set<Position> visited = new HashSet<>();
+    Queue<Position> queue = new LinkedList<>();
+    queue.add(startPosition);
+    visited.add(startPosition);
+
+    while (!queue.isEmpty()) {
+      Position current = queue.poll();
+
+      if (gameMap.getTileTypeAt(current.x(), current.y()) == type) {
+        return current;
+      }
+
+      // Use getValidNeighbors to get valid neighboring positions
+      Set<Position> neighbors = getValidNeighbors(current, gameMap, Set.of(Type.values()), false);
+
+      for (Position neighbor : neighbors) {
+        if (!visited.contains(neighbor)) {
+          queue.add(neighbor);
+          visited.add(neighbor);
+        }
+      }
+    }
+
+    // Return null if no tile of said type is found
+    return null;
+  }
+
 }

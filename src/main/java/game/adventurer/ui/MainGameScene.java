@@ -9,6 +9,7 @@ import game.adventurer.common.SharedSize;
 import game.adventurer.controller.RightPanelController;
 import game.adventurer.exceptions.InvalidGameStateException;
 import game.adventurer.exceptions.MissingCreatureException;
+import game.adventurer.exceptions.WrongTypeOfCreatureException;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Position;
 import game.adventurer.model.Tile;
@@ -16,6 +17,7 @@ import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
+import game.adventurer.model.creature.Lurker;
 import game.adventurer.model.creature.Monster;
 import game.adventurer.model.creature.Mugger;
 import game.adventurer.model.creature.Sniffer;
@@ -607,6 +609,9 @@ public class MainGameScene extends BaseScene implements Localizable {
       testMonsterRepresentation.setFill(Color.RED);
     } else if (monster instanceof Sniffer) {
       testMonsterRepresentation.setFill(Color.YELLOW);
+    } else if (monster instanceof Lurker) {
+      testMonsterRepresentation.setFill(Color.PLUM);
+
     }
     creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMonsterRepresentation);
     testMonsterRepresentation.setVisible(false);
@@ -991,7 +996,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     visibleTiles.addAll(newVisibleTiles);
   }
 
-  private void startMonsterMovement() throws MissingCreatureException {
+  private void startMonsterMovement() throws MissingCreatureException, WrongTypeOfCreatureException {
     monsterBehaviorManager.moveMonsters(creatureAnimationManager);
   }
 

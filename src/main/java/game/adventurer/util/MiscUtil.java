@@ -7,7 +7,7 @@ import game.adventurer.model.Position;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
-import game.adventurer.model.creature.Monster;
+import game.adventurer.model.creature.Lurker;
 import game.adventurer.model.creature.Mugger;
 import game.adventurer.model.creature.Sniffer;
 import game.adventurer.model.enums.Direction;
@@ -138,12 +138,11 @@ public class MiscUtil {
     Position origin = new Position(creature.getTileX(), creature.getTileY());
     visibleTiles.add(origin); // The creature's position is always "visible" to her
 
-    // TODO: update when new Creatures are ... created, hehe
     int maxDistance = switch (creature) {
       case Adventurer ignored -> 5; // 5 as 5 is the max an Adventurer can "see" in the best direction (frontward)
       case Sniffer ignored -> 8;
       case Mugger ignored -> 4;
-      case Monster ignored -> 8;
+      case Lurker ignored -> 5;
       default -> throw new IllegalStateException("Unexpected value: " + creature);
     };
 
@@ -159,8 +158,15 @@ public class MiscUtil {
         if (isOutOfMapBounds(gameMap, targetPosition.x(), targetPosition.y())) {
           continue;
         }
+
+        boolean woodsAreBlockingView = true;
+        if (creature instanceof Lurker && gameMap.getTileTypeAt(creature.getTileX(), creature.getTileY()) == Type.WOOD) {
+          // Lurkers on Type.WOOD Tiles woods can see through adjacent Type.WOOD Tiles
+          woodsAreBlockingView = !isAdjacentOrSamePosition(origin, targetPosition);
+        }
+
         // Check if the target is visible and within the creature's view distance
-        if (isVisible(origin, targetPosition, gameMap) &&
+        if (isVisible(origin, targetPosition, gameMap, woodsAreBlockingView) &&
             getDistance(origin, targetPosition) <= getMaxVisibleDistanceForCreature(targetPosition, origin, creature)) {
           visibleTiles.add(targetPosition);
         }
@@ -171,15 +177,29 @@ public class MiscUtil {
   }
 
   /**
+   * Checks if two positions are the same or adjacent to each other. This includes orthogonal and diagonal adjacency.
+   *
+   * @param a The first position.
+   * @param b The second position.
+   * @return {@code true} if the positions are the same or adjacent, {@code false} otherwise.
+   */
+  private static boolean isAdjacentOrSamePosition(Position a, Position b) {
+    int dx = Math.abs(a.x() - b.x());
+    int dy = Math.abs(a.y() - b.y());
+    return (dx <= 1 && dy <= 1); // Includes all adjacent tiles (including diagonals) + origin
+  }
+
+  /**
    * Determines if a target position is visible from an origin position using a modified Bresenham's line algorithm. This method takes into account
    * obstacles (WOOD tiles) and checks for diagonal visibility.
    *
-   * @param origin  The starting position.
-   * @param target  The target position to check for visibility.
-   * @param gameMap The game map containing the tiles and obstacles.
+   * @param origin               The starting position.
+   * @param target               The target position to check for visibility.
+   * @param gameMap              The game map containing the tiles and obstacles.
+   * @param woodsAreBlockingView determine if woods should be blocking view or not
    * @return true if the target is visible from the origin, false otherwise.
    */
-  private static boolean isVisible(Position origin, Position target, GameMap gameMap) {
+  private static boolean isVisible(Position origin, Position target, GameMap gameMap, boolean woodsAreBlockingView) {
     int originX = origin.x();
     int originY = origin.y();
     int targetX = target.x();
@@ -196,20 +216,22 @@ public class MiscUtil {
       if (isOutOfMapBounds(gameMap, originX, originY)) {
         return false;
       }
-      // Check if the current tile is blocking (WOOD)
-      if (gameMap.getTileTypeAt(originX, originY) == Type.WOOD) {
-        return false;
-      }
-
-      // Check for diagonal visibility
-      if (originX != targetX && originY != targetY) {
-        // We're moving diagonally
-        boolean horizontalBlocked = gameMap.getTileTypeAt(originX + stepX, originY) == Type.WOOD;
-        boolean verticalBlocked = gameMap.getTileTypeAt(originX, originY + stepY) == Type.WOOD;
-
-        // If both adjacent directions are blocked, block the diagonal
-        if (horizontalBlocked && verticalBlocked) {
+      if (woodsAreBlockingView) {
+        // Check if the current tile is blocking (WOOD)
+        if (gameMap.getTileTypeAt(originX, originY) == Type.WOOD) {
           return false;
+        }
+
+        // Check for diagonal visibility
+        if (originX != targetX && originY != targetY) {
+          // We're moving diagonally
+          boolean horizontalBlocked = gameMap.getTileTypeAt(originX + stepX, originY) == Type.WOOD;
+          boolean verticalBlocked = gameMap.getTileTypeAt(originX, originY + stepY) == Type.WOOD;
+
+          // If both adjacent directions are blocked, block the diagonal
+          if (horizontalBlocked && verticalBlocked) {
+            return false;
+          }
         }
       }
 
@@ -252,7 +274,6 @@ public class MiscUtil {
     Direction facingDirection = creature.getFacingDirection();
 
     Direction currentDirection = getDirectionBetween(startPosition, currentlyCheckedPosition);
-    // TODO: update when new type of Creature created
     switch (creature) {
       case Adventurer ignored -> {
         if (currentDirection == facingDirection) {
@@ -272,6 +293,12 @@ public class MiscUtil {
       }
       case Sniffer ignored -> {
         return 6; // Detection based on "smell" not "sight"
+      }
+      case Lurker ignored -> {
+        if (currentDirection == facingDirection) {
+          return 5;
+        }
+        return 4; // other directions
       }
       default -> {
         return -1;

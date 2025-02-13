@@ -9,7 +9,7 @@ import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
-import game.adventurer.model.creature.Sniffer;
+import game.adventurer.model.creature.Lurker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.random.RandomGenerator;
@@ -96,16 +96,20 @@ public class MapGenerator {
     // CreatureMovementHandler creation
     movementHandler = new CreatureMovementHandler(map);
     for (int i = 0; i < width; i++) {
-      if (Tile.Type.PATH == map.getTileTypeAt(i, 0)) {
-        // Adds a Monster on first tile that is a PATH tile, and has a path to the adventurer, then breaks
-        GameMap finalMap = map;
-        if (hasPath(adventurer.getTileX(), adventurer.getTileY(), i, 0, map.getMapWidth(), map.getMapHeight(),
-            (x, y) -> finalMap.getTileTypeAt(x, y) == Type.PATH)) {
-//          map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
-          map.addMonster(new Sniffer("Test Sniffer " + (i + 1), i, 0, movementHandler));
-          break;
-        }
-
+//      if (Tile.Type.PATH == map.getTileTypeAt(i, 0)) {
+//        // Adds a Monster on first tile that is a PATH tile, and has a path to the adventurer, then breaks
+//        GameMap finalMap = map;
+//        if (hasPath(adventurer.getTileX(), adventurer.getTileY(), i, 0, map.getMapWidth(), map.getMapHeight(),
+//            (x, y) -> finalMap.getTileTypeAt(x, y) == Type.PATH)) {
+////          map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
+//          map.addMonster(new Sniffer("Test Sniffer " + (i + 1), i, 0, movementHandler));
+//          break;
+//        }
+//
+//      }
+      if (Tile.Type.WOOD == map.getTileTypeAt(i, 0)) {
+        map.addMonster(new Lurker("Test Lurker", i, 0, movementHandler));
+        break;
       }
     }
 
