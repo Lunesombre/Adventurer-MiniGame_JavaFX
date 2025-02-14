@@ -458,15 +458,107 @@ public class MainGameScene extends BaseScene implements Localizable {
     log.debug("Tile size: {}", tileSize);
     log.debug("Offsets: x={}, y={}", xOffset, yOffset);
 
-    // Update size and position of the adventurer
-    adventurerCircle.setCenterX(advX);
-    adventurerCircle.setCenterY(advY);
-    adventurerCircle.setRadius(tileSize / 2);
+    // Update size and position of Monsters
+    for (Monster monster : gameMap.getMonsters()) {
+      updateCreatureVisual(monster, creaturesRepresentationMap.get(monster));
+    }
+    // Update the size and position of the adventurer on the map
+    updateCreatureVisual(gameMap.getAdventurer(), adventurerCircle);
+
+    // Set Adventurer field of View visually
+    updateAdventurerFieldOfView();
+
+    // displays/hide testMonsterRepresentation
+    Position monsterPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
+    testMonsterRepresentation.setVisible(visibleTiles.contains(monsterPos));
+
+    log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
+        gameMap.getAdventurer().getTileX(),
+        gameMap.getAdventurer().getTileY(),
+        advX, advY);
+  }
+
+  /**
+   * Handles the resizing of the game map and updates the visual representation of all elements. This method recalculates the map dimensions, resizes
+   * and repositions all tiles, updates the position and size of creatures (monsters and the adventurer), and adjusts the treasure's visual
+   * representation accordingly.
+   * <p>
+   * After all updates, it forces a layout refresh to ensure the UI is correctly redrawn.
+   * </p>
+   */
+  private void handleResize() {
+    int mapWidth = gameMap.getMapWidth();
+    int mapHeight = gameMap.getMapHeight();
+    calculateMapDimensions(mapWidth, mapHeight);
+
+    // Update size and position of each tile
+    for (int y = 0; y < mapHeight; y++) {
+      for (int x = 0; x < mapWidth; x++) {
+        Rectangle rect = (Rectangle) mapView.getChildren().get(y * mapWidth + x);
+        rect.setX(xOffset + x * tileSize);
+        rect.setY(yOffset + y * tileSize);
+        rect.setWidth(tileSize);
+        rect.setHeight(tileSize);
+      }
+    }
+
+    // update size and position for creatures' representations
+    // update size and position of Monsters
+    for (Monster monster : gameMap.getMonsters()) {
+      updateCreatureVisual(monster, creaturesRepresentationMap.get(monster));
+    }
+    // Update the size and position of the adventurer on the map
+    updateCreatureVisual(gameMap.getAdventurer(), adventurerCircle);
 
     // Update size and position of treasure
+    updateTreasureCrossVisual();
+
+    // Forcing a visual update
+    mapView.requestLayout();
+  }
+
+  /**
+   * Computes the graphical position of a tile-based element on the map. This method calculates the position by centering the element within its
+   * tile.<p> It is used when the Scene is resized, to properly position the center of the Circle in the Scene
+   *
+   * @param tileCoord The tile coordinate (X or Y) of the element on the grid.
+   * @param offset    The offset to apply to the position (typically xOffset or yOffset).
+   * @return The computed pixel position on the screen.
+   */
+  private double computeCenterCoord(int tileCoord, double offset) {
+    return offset + (tileCoord + 0.5) * tileSize;
+  }
+
+  private void updateCreatureVisual(Creature creature, Node visualRep) {
+    double centerX = computeCenterCoord(creature.getTileX(), xOffset);
+    double centerY = computeCenterCoord(creature.getTileY(), yOffset);
+
+    switch (visualRep) {
+      case Circle circle -> {
+        circle.setRadius(tileSize / 2);
+        circle.setCenterX(centerX);
+        circle.setCenterY(centerY);
+      }
+      case Rectangle rect -> {
+        rect.setWidth(tileSize);
+        rect.setHeight(tileSize);
+        rect.setX(centerX - tileSize / 2);
+        rect.setY(centerY - tileSize / 2);
+      }
+      case ImageView imageView -> {
+        imageView.setFitWidth(tileSize);
+        imageView.setFitHeight(tileSize);
+        imageView.setX(centerX - tileSize / 2);
+        imageView.setY(centerY - tileSize / 2);
+      }
+      default -> throw new IllegalStateException("Unhandled Node type: " + visualRep);
+    }
+  }
+
+  private void updateTreasureCrossVisual() {
     double crossSize = tileSize / 2;
-    double centerX = xOffset + (gameMap.getTreasure().getTileX() + 0.5) * tileSize;
-    double centerY = yOffset + (gameMap.getTreasure().getTileY() + 0.5) * tileSize;
+    double centerX = computeCenterCoord(gameMap.getTreasure().getTileX(), xOffset);
+    double centerY = computeCenterCoord(gameMap.getTreasure().getTileY(), yOffset);
 
     Line line1 = (Line) treasureCross.getChildren().get(0);
     Line line2 = (Line) treasureCross.getChildren().get(1);
@@ -486,55 +578,6 @@ public class MainGameScene extends BaseScene implements Localizable {
     // Positions the Group
     treasureCross.setLayoutX(centerX);
     treasureCross.setLayoutY(centerY);
-
-    // Set Lines stroke
-    line1.setStrokeWidth(tileSize / 20);
-    line2.setStrokeWidth(tileSize / 20);
-
-    // update size and position of Monsters
-    for (Monster monster : gameMap.getMonsters()) {
-      Node visualRep = creaturesRepresentationMap.get(monster);
-      switch (visualRep) {
-        case Circle circle -> {
-          circle.setRadius(tileSize / 2);
-          circle.setCenterX(xOffset + (monster.getTileX() + 0.5) * tileSize);
-          circle.setCenterY(yOffset + (monster.getTileY() + 0.5) * tileSize);
-        }
-        default -> throw new IllegalStateException("Unhandled Node type : " + visualRep);
-      }
-    }
-
-    // Set Adventurer field of View visually
-    updateAdventurerFieldOfView();
-
-    // displays/hide testMonsterRepresentation
-    Position monsterPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
-    testMonsterRepresentation.setVisible(visibleTiles.contains(monsterPos));
-
-    log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
-        gameMap.getAdventurer().getTileX(),
-        gameMap.getAdventurer().getTileY(),
-        advX, advY);
-  }
-
-  private void handleResize() {
-    int mapWidth = gameMap.getMapWidth();
-    int mapHeight = gameMap.getMapHeight();
-    calculateMapDimensions(mapWidth, mapHeight);
-
-    // Update size and position of each tile
-    for (int y = 0; y < mapHeight; y++) {
-      for (int x = 0; x < mapWidth; x++) {
-        Rectangle rect = (Rectangle) mapView.getChildren().get(y * mapWidth + x);
-        rect.setX(xOffset + x * tileSize);
-        rect.setY(yOffset + y * tileSize);
-        rect.setWidth(tileSize);
-        rect.setHeight(tileSize);
-      }
-    }
-
-//    // Forcing a visual update
-    mapView.requestLayout();
   }
 
 
@@ -946,6 +989,11 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private void togglePause() {
     isPaused = !isPaused;
+    if (isPaused) {
+      pauseMonsters();
+    } else {
+      unpauseMonsters();
+    }
     pause.setVisible(isPaused);
     log.info("en pause : {}", isPaused);
   }
@@ -1014,6 +1062,19 @@ public class MainGameScene extends BaseScene implements Localizable {
     gameLoop.setCycleCount(Animation.INDEFINITE); // Infinitely loops as long as gameLoop isn't stopped.
     activeTimelines.add(gameLoop);
     gameLoop.play();
+  }
+
+  private void pauseMonsters() {
+    for (int i = 0; i < activeTimelines.size(); i++) {
+      // we don't want to pause the gameLoop timeline that is the last one in the list
+      activeTimelines.get(i).pause();
+    }
+  }
+
+  private void unpauseMonsters() {
+    for (Timeline tl : activeTimelines) {
+      tl.play();
+    }
   }
 
 
