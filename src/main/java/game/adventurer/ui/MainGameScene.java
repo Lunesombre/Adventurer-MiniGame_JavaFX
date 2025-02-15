@@ -447,37 +447,20 @@ public class MainGameScene extends BaseScene implements Localizable {
     log.warn("Unhandled key press: {}", event.getCode());
   }
 
-  private void updateGameView() {
-    int tileX = gameMap.getAdventurer().getTileX();
-    int tileY = gameMap.getAdventurer().getTileY();
-
-    // Update the Adventurer's position on the map
-    double advX = xOffset + (tileX + 0.5) * tileSize;
-    double advY = yOffset + (tileY + 0.5) * tileSize;
-
-    log.debug("Scene dimensions: {} x {}", getWidth(), getHeight());
-    log.debug("Map dimensions: {} x {}", gameMap.getMapWidth(), gameMap.getMapHeight());
-    log.debug("Tile size: {}", tileSize);
-    log.debug("Offsets: x={}, y={}", xOffset, yOffset);
-
-    // Update size and position of Monsters
-    for (Monster monster : gameMap.getMonsters()) {
-      updateCreatureVisual(monster, creaturesRepresentationMap.get(monster));
-    }
-    // Update the size and position of the adventurer on the map
-    updateCreatureVisual(gameMap.getAdventurer(), adventurerCircle);
-
+  /**
+   * Updates the visual representation of the adventurer's field of view and the visibility of certain game elements.
+   * <p>
+   * This method updates the adventurer's field of view display based on the current game state and controls the visibility of specific game objects
+   * (like the monsters' representations), making them appear only when they are within the adventurer's visible tiles.
+   * </p>
+   */
+  private void updateVisibilityAndFieldOfView() {
     // Set Adventurer field of View visually
     updateAdventurerFieldOfView();
 
     // displays/hide testMonsterRepresentation
     Position monsterPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
     testMonsterRepresentation.setVisible(visibleTiles.contains(monsterPos));
-
-    log.debug("Adventurer position: Tile({}, {}), Pixel({}, {})",
-        gameMap.getAdventurer().getTileX(),
-        gameMap.getAdventurer().getTileY(),
-        advX, advY);
   }
 
   /**
@@ -1077,7 +1060,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private void startGameLoop() {
     final int refreshRate = 60;
-    Timeline gameLoop = new Timeline(new KeyFrame(Duration.millis(1000.0 / refreshRate), event -> updateGameView()));
+    Timeline gameLoop = new Timeline(new KeyFrame(Duration.millis(1000.0 / refreshRate), event -> updateVisibilityAndFieldOfView()));
     gameLoop.setCycleCount(Animation.INDEFINITE); // Infinitely loops as long as gameLoop isn't stopped.
     activeTimelines.add(gameLoop);
     gameLoop.play();
