@@ -395,7 +395,7 @@ public class PathfindingUtil {
         }
       }
     }
-    log.info("CalculatedSearchArea size : {}", searchArea);
+    log.info("CalculatedSearchArea size : {}", searchArea.size());
     return searchArea;
   }
 

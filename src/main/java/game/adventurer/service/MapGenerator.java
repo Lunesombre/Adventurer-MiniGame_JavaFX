@@ -1,17 +1,29 @@
 package game.adventurer.service;
 
+import static game.adventurer.model.enums.DifficultyLevel.EASY;
+import static game.adventurer.model.enums.DifficultyLevel.HARD;
+import static game.adventurer.model.enums.DifficultyLevel.NORMAL;
+import static game.adventurer.model.enums.MapSize.LARGE;
+import static game.adventurer.model.enums.MapSize.MEDIUM;
+import static game.adventurer.model.enums.MapSize.SMALL;
 import static game.adventurer.util.PathfindingUtil.hasPath;
 
 import game.adventurer.exceptions.NoValidRangeException;
-import game.adventurer.model.CreatureMovementHandler;
 import game.adventurer.model.GameMap;
 import game.adventurer.model.Tile;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.Treasure;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Lurker;
+import game.adventurer.model.creature.Monster;
+import game.adventurer.model.creature.Mugger;
+import game.adventurer.model.creature.Sniffer;
+import game.adventurer.model.enums.DifficultyLevel;
+import game.adventurer.model.enums.MapSize;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.random.RandomGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +41,13 @@ public class MapGenerator {
   public static final Logger LOG = LoggerFactory.getLogger(MapGenerator.class);
   private static final RandomGenerator random = RandomGenerator.getDefault();
 
-  public static GameMap generateMap(int width, int height, String adventurerName) throws NoValidRangeException {
+  public static GameMap generateMap(String adventurerName, MapSize mapSize, DifficultyLevel difficulty) throws NoValidRangeException {
+    int width = mapSize.getSize();
+    int height = mapSize.getSize();
     GameMap map;
     Adventurer adventurer;
     Treasure treasure;
-    CreatureMovementHandler movementHandler;
+
     int loopCounter = 0;
     do {
       loopCounter += 1;
@@ -93,27 +107,80 @@ public class MapGenerator {
     LOG.info("LoopCount = {}", loopCounter);
     LOG.debug("The map: {}", map);
 
-    // CreatureMovementHandler creation
-    movementHandler = new CreatureMovementHandler(map);
-    for (int i = 0; i < width; i++) {
-//      if (Tile.Type.PATH == map.getTileTypeAt(i, 0)) {
-//        // Adds a Monster on first tile that is a PATH tile, and has a path to the adventurer, then breaks
-//        GameMap finalMap = map;
-//        if (hasPath(adventurer.getTileX(), adventurer.getTileY(), i, 0, map.getMapWidth(), map.getMapHeight(),
-//            (x, y) -> finalMap.getTileTypeAt(x, y) == Type.PATH)) {
-////          map.addMonster(new Mugger("Test Mugger " + (i + 1), i, 0, movementHandler));
-//          map.addMonster(new Sniffer("Test Sniffer " + (i + 1), i, 0, movementHandler));
-//          break;
-//        }
-//
-//      }
-      if (Tile.Type.WOOD == map.getTileTypeAt(i, 0)) {
-        map.addMonster(new Lurker("Test Lurker", i, 0, movementHandler));
-        break;
-      }
-    }
+    addMonsters(map, mapSize, difficulty);
 
     return map;
+  }
+
+  private static void addMonsters(GameMap map, MapSize size, DifficultyLevel difficultyLevel) {
+    record ChosenSettings(MapSize size, DifficultyLevel difficultyLevel) {
+
+    }
+    int lurkersCount = 0;
+    int muggersCount = 0;
+    int sniffersCount = 0;
+    ChosenSettings chosenSettings = new ChosenSettings(size, difficultyLevel);
+
+    // no record destructuration on enums in a switch in java 21, yet.
+    switch (chosenSettings) {
+      case ChosenSettings s when s.equals(new ChosenSettings(SMALL, EASY)) -> muggersCount = 2;
+      case ChosenSettings s when s.equals(new ChosenSettings(SMALL, NORMAL)) -> {
+        muggersCount = 1;
+        sniffersCount = 1;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(SMALL, HARD)) -> {
+        muggersCount = 1;
+        sniffersCount = 1;
+        lurkersCount = 1;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(MEDIUM, EASY)) -> {
+        muggersCount = 3;
+        sniffersCount = 1;
+        lurkersCount = 1;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(MEDIUM, NORMAL)) -> {
+        muggersCount = 3;
+        sniffersCount = 2;
+        lurkersCount = 1;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(MEDIUM, HARD)) -> {
+        muggersCount = 4;
+        sniffersCount = 2;
+        lurkersCount = 2;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(LARGE, EASY)) -> {
+        muggersCount = 6;
+        sniffersCount = 3;
+        lurkersCount = 3;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(LARGE, NORMAL)) -> {
+        muggersCount = 8;
+        sniffersCount = 5;
+        lurkersCount = 3;
+      }
+      case ChosenSettings s when s.equals(new ChosenSettings(LARGE, HARD)) -> {
+        muggersCount = 10;
+        sniffersCount = 6;
+        lurkersCount = 4;
+      }
+      case null, default -> throw new IllegalStateException("Unexpected settings: " + chosenSettings);
+    }
+    Map<Class<? extends Monster>, Integer> monsterQuotaMap = new HashMap<>();
+    if (muggersCount > 0) {
+      monsterQuotaMap.put(Mugger.class, muggersCount);
+    }
+    if (sniffersCount > 0) {
+      monsterQuotaMap.put(Sniffer.class, sniffersCount);
+    }
+    if (lurkersCount > 0) {
+      monsterQuotaMap.put(Lurker.class, lurkersCount);
+    }
+
+    // adding monsters to the map.
+    // the monsters should be placed on tiles that they have the right to be on,
+    // have a path to the Adventurer (except Lurkers ?) and far enough from the Adventurer
+    MonsterPlacerService placer = new MonsterPlacerService(map, size);
+    placer.placeMonsters(monsterQuotaMap);
   }
 
   private static boolean checkPath(GameMap gameMap, Adventurer adventurer, Treasure treasure) {
