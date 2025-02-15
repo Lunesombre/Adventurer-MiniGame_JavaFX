@@ -255,23 +255,26 @@ public class MonsterBehaviorManager {
   private void handleLurkerNeutralMovement(Lurker lurker, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer) {
     boolean triggerAnimation = false;
     long currentTime = System.currentTimeMillis();
-    boolean canMoveOnPathTile = lurker.getLastMoveTime() + 1000 < currentTime; // if the lurker is on a Tile.Type.PATH it means
-    // it has chased the Adventurer and lost it, and is now exhausted, thus lower, until he gets back to the woods
-    if (gameMap.getTileTypeAt(lurker.getTileX(), lurker.getTileY()).equals(Type.PATH) && canMoveOnPathTile) {
-      Position nearestWood = findNearestTileOfType(new Position(lurker.getTileX(), lurker.getTileY()), gameMap, Type.WOOD);
-      if (nearestWood != null) {
-        LinkedHashSet<Position> shortestPath = (LinkedHashSet<Position>) shortestPath(lurker,
-            new Position(lurker.getTileX(), lurker.getTileY()), nearestWood, gameMap);
-        try {
-          Position nextPos = shortestPath.getFirst();
-          lurker.moveTo(nextPos);
-          triggerAnimation = true;
-        } catch (NoSuchElementException e) {
-          log.warn("No path to woods found for {}: {}", lurker.getName(), e.getMessage());
+    boolean canMoveOnPathTile = lurker.getLastMoveTime() + 1200 < currentTime; // if the lurker is on a Tile.Type.PATH it means
+    // it has chased the Adventurer and lost it, and is now exhausted, thus slower, until he gets back to the woods
+    if (gameMap.getTileTypeAt(lurker.getTileX(), lurker.getTileY()).equals(Type.PATH)) {
+      if (canMoveOnPathTile) {
+        Position nearestWood = findNearestTileOfType(new Position(lurker.getTileX(), lurker.getTileY()), gameMap, Type.WOOD);
+        if (nearestWood != null) {
+          LinkedHashSet<Position> shortestPath = (LinkedHashSet<Position>) shortestPath(lurker,
+              new Position(lurker.getTileX(), lurker.getTileY()), nearestWood, gameMap);
+          try {
+            Position nextPos = shortestPath.getFirst();
+            lurker.moveTo(nextPos);
+            triggerAnimation = true;
+          } catch (NoSuchElementException e) {
+            log.warn("No path to woods found for {}: {}", lurker.getName(), e.getMessage());
+          }
         }
       }
     } else if (lurker.canMove()) {
       // Lurker is back in the woods and doesn't see the adventurer, it won't travel through PATH tiles
+      lurker.setRushCounter(0); // reset the Lurker's ability to rush the Adventurer
       lurker.getAllowedTileTypes().remove(Type.PATH);
       triggerAnimation = lurker.wander();
     }
@@ -363,12 +366,6 @@ public class MonsterBehaviorManager {
         if (monster.getSearchArea().isEmpty()) {
           // prevents monster from freezing if the search area is empty already
           monster.chill();
-          if (monster instanceof Lurker lurker) {
-            lurker.setRushCounter(0); // reset the Lurker's ability to rush the Adventurer
-            if (gameMap.getTileTypeAt(lurker.getTileX(), lurker.getTileY()) == Type.WOOD) {
-              lurker.getAllowedTileTypes().remove(Type.PATH);
-            }
-          }
         }
       }
     } else {

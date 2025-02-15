@@ -197,7 +197,7 @@ public class PathfindingUtil {
       }
     }
 
-    return Collections.emptySet(); // No path found
+    return new LinkedHashSet<>(); // No path found
 
   }
 
