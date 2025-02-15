@@ -10,7 +10,6 @@ import game.adventurer.model.Position;
 import game.adventurer.model.enums.Direction;
 import game.adventurer.model.enums.MonsterStatus;
 import game.adventurer.model.enums.Move;
-import game.adventurer.util.PathfindingUtil;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -119,7 +118,7 @@ public abstract class Monster extends Creature {
         previousTileY = tileY;
         // uses PathfindingUtil to find the next tile to go get the Adventurer
         LinkedHashSet<Position> pathToAdventurer =
-            (LinkedHashSet<Position>) PathfindingUtil.shortestPath(this, new Position(this.getTileX(), this.getTileY()), lastSeenAdventurerPosition,
+            (LinkedHashSet<Position>) shortestPath(this, new Position(this.getTileX(), this.getTileY()), lastSeenAdventurerPosition,
                 gameMap);
         // move to this tile
         if (!pathToAdventurer.isEmpty()) {
@@ -151,31 +150,31 @@ public abstract class Monster extends Creature {
 
   private void moveForward() {
     lastMoveTime = System.currentTimeMillis();
-    Move move = associateDirectionToMove(facingDirection);
+    Move move = associateDirectionToMove(getFacingDirection());
     int nextX = tileX + move.getDx();
     int nextY = tileY + move.getDy();
 
     // If the tile is not authorized, attempt to turn until a valid direction is found.
     int attempts = 0;
     while (!movementHandler.isAllowedTile(nextX, nextY, this)) {
-      Direction initialDirection = facingDirection;
+      Direction initialDirection = getFacingDirection();
       ++attempts;
       switch (attempts) {
         case 1 -> {
           // Try turning in a random direction
           turnRandomly();
-          move = associateDirectionToMove(facingDirection);
+          move = associateDirectionToMove(getFacingDirection());
           nextX = tileX + move.getDx();
           nextY = tileY + move.getDy();
         }
         case 2 -> {
           turnAround(); // turns in the opposite direction to that previously tried
-          move = associateDirectionToMove(facingDirection);
+          move = associateDirectionToMove(getFacingDirection());
           nextX = tileX + move.getDx();
           nextY = tileY + move.getDy();
         }
         default -> {
-          facingDirection = initialDirection.getOpposite(); // takes the opposite direction to the original one
+          setFacingDirection(initialDirection.getOpposite()); // takes the opposite direction to the original one
           return; // exits method
         }
       }
@@ -188,11 +187,12 @@ public abstract class Monster extends Creature {
 
   private void turnRandomly() {
     // Random left or right turns
-    this.facingDirection = (random.nextInt(2) % 2 == 0) ? facingDirection.turnQuarterClockwise() : facingDirection.turnQuarterCounterClockwise();
+    this.facingDirection.set(
+        (random.nextInt(2) % 2 == 0) ? this.facingDirection.get().turnQuarterClockwise() : facingDirection.get().turnQuarterCounterClockwise());
   }
 
   private void turnAround() {
-    this.facingDirection = facingDirection.getOpposite();
+    this.facingDirection.set(facingDirection.get().getOpposite());
   }
 
   private Move associateDirectionToMove(Direction direction) {
@@ -213,15 +213,28 @@ public abstract class Monster extends Creature {
   }
 
   public void moveTo(Position pos) {
-    if ((Math.abs(pos.x() - this.tileX) == 1 && Math.abs(pos.y() - this.tileY) == 0) ||
-        (Math.abs(pos.x() - this.tileX) == 0 && Math.abs(pos.y() - this.tileY) == 1)) {
-      this.previousTileX = tileX;
-      this.previousTileY = tileY;
-      this.tileX = pos.x();
-      this.tileY = pos.y();
-      lastMoveTime = System.currentTimeMillis();
-    } else {
-      log.error("{} cannot jump from {},{} to {},{}, something isn't working properly", this.name, this.tileX, this.tileY, pos.x(), pos.y());
+    int dx = pos.x() - this.getTileX();
+    int dy = pos.y() - this.getTileY();
+    Direction facingDirection;
+    switch (dx) {
+      case 0 -> {
+        switch (dy) {
+          case 1 -> facingDirection = Direction.SOUTH;
+          case -1 -> facingDirection = Direction.NORTH;
+          default -> throw new RuntimeException("Impossible movement, deltaV required: x =" + dx + ", y=" + dy + ".");
+        }
+      }
+      case 1 -> facingDirection = Direction.EAST;
+      case -1 -> facingDirection = Direction.WEST;
+      default -> throw new RuntimeException("Impossible movement, deltaV required: x =" + dx + ", y=" + dy + ".");
     }
+
+    this.previousTileX = tileX;
+    this.previousTileY = tileY;
+    this.tileX = pos.x();
+    this.tileY = pos.y();
+    this.setFacingDirection(facingDirection);
+    lastMoveTime = System.currentTimeMillis();
+
   }
 }

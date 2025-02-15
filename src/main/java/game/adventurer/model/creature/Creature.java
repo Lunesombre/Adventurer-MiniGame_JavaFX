@@ -7,7 +7,9 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +27,8 @@ public abstract class Creature {
   protected long lastMoveTime = 0;
   protected int previousTileX;
   protected int previousTileY;
-  protected Direction facingDirection;
   protected Set<Type> allowedTileTypes;
+  protected ObjectProperty<Direction> facingDirection = new SimpleObjectProperty<>();
   protected MovementHandler movementHandler;
   protected Set<Position> visibleTiles = new HashSet<>();
 
@@ -40,7 +42,7 @@ public abstract class Creature {
     this.tileY = tileY;
     this.health = new SimpleIntegerProperty(health);
     this.moveSpeed = moveSpeed;
-    this.facingDirection = Direction.values()[new Random().nextInt(Direction.values().length)]; // creates a random facing Direction
+    this.facingDirection.set(Direction.values()[new Random().nextInt(Direction.values().length)]); // creates a random facing Direction
   }
 
   protected Creature(String name, int tileX, int tileY) {
@@ -60,6 +62,18 @@ public abstract class Creature {
   // Setter for health
   public void setHealth(int health) {
     this.health.set(health);
+  }
+
+  public ObjectProperty<Direction> facingDirectionProperty() {
+    return facingDirection;
+  }
+
+  public Direction getFacingDirection() {
+    return facingDirection.get();
+  }
+
+  public void setFacingDirection(Direction direction) {
+    this.facingDirection.set(direction);
   }
 
 }
