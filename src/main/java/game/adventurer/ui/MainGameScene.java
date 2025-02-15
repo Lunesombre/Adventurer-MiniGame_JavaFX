@@ -33,6 +33,7 @@ import game.adventurer.ui.common.BaseScene;
 import game.adventurer.ui.common.CreditsOverlay;
 import game.adventurer.ui.common.OptionsPanel;
 import game.adventurer.ui.common.ScoreBoard;
+import game.adventurer.ui.common.TriangleCreatureRepresentation;
 import game.adventurer.ui.common.option.KeyBindingOption;
 import game.adventurer.ui.common.option.LanguageOption;
 import game.adventurer.ui.common.option.ScoreBoardOption;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
@@ -107,7 +109,7 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private Circle adventurerCircle;
   private Group treasureCross;
-  private Circle testMonsterRepresentation;
+  private TriangleCreatureRepresentation testMonsterRepresentation;
   @Getter
   private double tileSize;
   @Getter
@@ -551,6 +553,11 @@ public class MainGameScene extends BaseScene implements Localizable {
         imageView.setX(centerX - tileSize / 2);
         imageView.setY(centerY - tileSize / 2);
       }
+      case TriangleCreatureRepresentation triangle -> {
+        triangle.setSideLength(tileSize * 0.9);
+        triangle.setLayoutX(centerX);
+        triangle.setLayoutY(centerY);
+      }
       default -> throw new IllegalStateException("Unhandled Node type: " + visualRep);
     }
   }
@@ -641,11 +648,14 @@ public class MainGameScene extends BaseScene implements Localizable {
     }
 
     // Adding testMonsterRepresentation
-    testMonsterRepresentation = new Circle(tileSize / 2, Color.RED);
+    testMonsterRepresentation = new TriangleCreatureRepresentation(tileSize * 0.9, gameMap.getMonsters().getFirst().getFacingDirection());
     double maDvX = xOffset + (gameMap.getMonsters().getFirst().getTileX() + 0.5) * tileSize;
     double maDvY = yOffset + (gameMap.getMonsters().getFirst().getTileY() + 0.5) * tileSize;
-    testMonsterRepresentation.setCenterX(maDvX);
-    testMonsterRepresentation.setCenterY(maDvY);
+
+    // Move the triangle to (maDvX, maDvY)
+    testMonsterRepresentation.setLayoutX(maDvX);
+    testMonsterRepresentation.setLayoutY(maDvY);
+
     mapView.getChildren().add(testMonsterRepresentation);
     Monster monster = gameMap.getMonsters().getFirst();
     if (monster instanceof Mugger) {
@@ -653,11 +663,20 @@ public class MainGameScene extends BaseScene implements Localizable {
     } else if (monster instanceof Sniffer) {
       testMonsterRepresentation.setFill(Color.YELLOW);
     } else if (monster instanceof Lurker) {
-      testMonsterRepresentation.setFill(Color.PLUM);
+      testMonsterRepresentation.setFill(Color.ORCHID);
 
     }
     creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMonsterRepresentation);
     testMonsterRepresentation.setVisible(false);
+
+    // Listener for facingDirection of Monsters
+    for (Entry<Creature, Node> entry : creaturesRepresentationMap.entrySet()) {
+      entry.getKey().facingDirectionProperty().addListener((observable, oldValue, newValue) -> {
+        if (entry.getValue() instanceof TriangleCreatureRepresentation triangle) {
+          triangle.setRotation(newValue, true);
+        }
+      });
+    }
 
     handleResize();
   }
