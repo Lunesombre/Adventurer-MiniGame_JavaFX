@@ -16,24 +16,34 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Getter
-@Setter
 public abstract class Creature {
 
   protected String name;
+  @Setter
   protected int tileX; // Position tileX on the game map
+  @Setter
   protected int tileY; // Position tileY on the game map
   protected IntegerProperty health; // Number of life points of a Creature, observable
   protected int moveSpeed; // unused for now, but soon
+  @Setter
   protected long lastMoveTime = 0;
+  @Setter
   protected int previousTileX;
+  @Setter
   protected int previousTileY;
   protected Set<Type> allowedTileTypes;
   protected ObjectProperty<Direction> facingDirection = new SimpleObjectProperty<>();
   protected MovementHandler movementHandler;
+  @Setter
   protected Set<Position> visibleTiles = new HashSet<>();
 
-  private static final int DEFAULT_HEALTH = 10;
+  public static final int DEFAULT_HEALTH = 10;
   private static final int DEFAULT_MOVE_SPEED = 1;
+  /**
+   * Cooldown time between moves for a Creature. Represents the number of milliseconds before the next move is allowed.
+   */
+  @Setter
+  protected int cooldownTime;
 
 
   protected Creature(String name, int tileX, int tileY, int health, int moveSpeed) {
@@ -75,5 +85,7 @@ public abstract class Creature {
   public void setFacingDirection(Direction direction) {
     this.facingDirection.set(direction);
   }
+
+  public abstract int resetCooldownTime();
 
 }
