@@ -31,15 +31,13 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.Node;
 import javafx.util.Duration;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Getter
 public class MonsterBehaviorManager {
 
-  public static final String STATUS_CHANGE_MESSAGE = "{} has detected Adventurer at {},{} and is now {} ";
-  public static final String PURSUE_CALLED_NO_ADVENTURER_KNOWN_POSITION = "pursue() called but: {}. Resetting the monster status to NEUTRAL";
+  private static final String STATUS_CHANGE_MESSAGE = "{} has detected Adventurer at {},{} and is now {} ";
+  private static final String PURSUE_CALLED_NO_ADVENTURER_KNOWN_POSITION = "pursue() called but: {}. Resetting the monster status to NEUTRAL";
 
   private final GameMap gameMap;
   private final Map<Creature, Node> creaturesRepresentationMap;
@@ -57,7 +55,7 @@ public class MonsterBehaviorManager {
    * @param monster The monster for which to calculate the field of view.
    * @return A set of positions visible by the monster.
    */
-  public Set<Position> calculateMonsterFieldOfView(Monster monster) {
+  private Set<Position> calculateMonsterFieldOfView(Monster monster) {
     Set<Position> visibleTiles = MiscUtil.calculateFieldOfView(monster, gameMap);
     monster.setVisibleTiles(visibleTiles);
     return visibleTiles;
@@ -71,7 +69,7 @@ public class MonsterBehaviorManager {
    * @param adventurer The adventurer whose position is being checked.
    * @return {@code true} if the adventurer is within the monster's field of view,{@code false} otherwise.
    */
-  public boolean detectAdventurer(Monster monster, Adventurer adventurer) {
+  private boolean detectAdventurer(Monster monster, Adventurer adventurer) {
     Position adventurerPosition = new Position(adventurer.getTileX(), adventurer.getTileY());
     return monster.getVisibleTiles().contains(adventurerPosition);
   }
@@ -137,7 +135,13 @@ public class MonsterBehaviorManager {
     logStartedMovingMessage(sniffer);
 
     Timeline timeline = new Timeline(new KeyFrame(Duration.millis(100), event ->
-        handleSnifferMovement(sniffer, creatureAnimationManager, adventurer)
+    {
+      try {
+        handleSnifferMovement(sniffer, creatureAnimationManager, adventurer);
+      } catch (MissingCreatureException e) {
+        log.error("Monster:{} - {}", sniffer.getName(), e.getMessage());
+      }
+    }
     ));
 
     timeline.setCycleCount(Animation.INDEFINITE);
@@ -190,7 +194,13 @@ public class MonsterBehaviorManager {
       throw new WrongTypeOfCreatureException("This method cannot be used with" + Sniffer.class.getName());
     }
     return new Timeline(new KeyFrame(Duration.millis(100), event ->
-        handleMonsterMovement(monster, creatureAnimationManager, adventurer, hasReachLastSeenPosition, justLeftMonsterFoV, pathToExplore)
+    {
+      try {
+        handleMonsterMovement(monster, creatureAnimationManager, adventurer, hasReachLastSeenPosition, justLeftMonsterFoV, pathToExplore);
+      } catch (MissingCreatureException e) {
+        log.error("Monster:{} - {}", monster.getName(), e.getMessage());
+      }
+    }
     ));
   }
 
@@ -206,7 +216,8 @@ public class MonsterBehaviorManager {
    * @param pathToExplore            the path the monster should explore when searching
    */
   private void handleMonsterMovement(Monster monster, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer,
-      AtomicBoolean hasReachLastSeenPosition, AtomicBoolean justLeftMonsterFoV, AtomicReference<LinkedHashSet<Position>> pathToExplore) {
+      AtomicBoolean hasReachLastSeenPosition, AtomicBoolean justLeftMonsterFoV, AtomicReference<LinkedHashSet<Position>> pathToExplore)
+      throws MissingCreatureException {
 
     if (monster.getStatus().equals(MonsterStatus.NEUTRAL)) {
       if (monster instanceof Lurker lurker) {
@@ -229,7 +240,8 @@ public class MonsterBehaviorManager {
    * @param creatureAnimationManager the animation manager handling creature animations
    * @param adventurer               the Adventurer instance to track
    */
-  private void handleNeutralMovement(Monster monster, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer) {
+  private void handleNeutralMovement(Monster monster, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer)
+      throws MissingCreatureException {
     boolean triggerAnimation = monster.wander();
     if (triggerAnimation) {
       animateCreature(creatureAnimationManager, monster);
@@ -252,7 +264,8 @@ public class MonsterBehaviorManager {
    * @param creatureAnimationManager the animation manager handling creature animations
    * @param adventurer               the Adventurer instance to track
    */
-  private void handleLurkerNeutralMovement(Lurker lurker, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer) {
+  private void handleLurkerNeutralMovement(Lurker lurker, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer)
+      throws MissingCreatureException {
     boolean triggerAnimation = false;
     long currentTime = System.currentTimeMillis();
     boolean canMoveOnPathTile = lurker.getLastMoveTime() + 1200 < currentTime; // if the lurker is on a Tile.Type.PATH it means
@@ -334,7 +347,8 @@ public class MonsterBehaviorManager {
    * @param pathToExplore            the path the monster should explore when searching
    */
   private void handleSearchMovement(Monster monster, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer,
-      AtomicBoolean hasReachLastSeenPosition, AtomicBoolean justLeftMonsterFoV, AtomicReference<LinkedHashSet<Position>> pathToExplore) {
+      AtomicBoolean hasReachLastSeenPosition, AtomicBoolean justLeftMonsterFoV, AtomicReference<LinkedHashSet<Position>> pathToExplore)
+      throws MissingCreatureException {
     if (justLeftMonsterFoV.get()) {
       pathToExplore.set((LinkedHashSet<Position>) shortestPath(monster, new Position(monster.getTileX(), monster.getTileY()),
           monster.getLastSeenAdventurerPosition(), gameMap));
@@ -391,7 +405,8 @@ public class MonsterBehaviorManager {
    * @param creatureAnimationManager the animation manager handling creature animations
    * @param adventurer               the Adventurer instance to track
    */
-  private void handleSnifferMovement(Sniffer sniffer, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer) {
+  private void handleSnifferMovement(Sniffer sniffer, CreatureAnimationManager creatureAnimationManager, Adventurer adventurer)
+      throws MissingCreatureException {
     if (sniffer.getStatus().equals(MonsterStatus.NEUTRAL) && sniffer.canMove()) {
       handleNeutralMovement(sniffer, creatureAnimationManager, adventurer);
     } else if (sniffer.getStatus().equals(MonsterStatus.ALERTED) && sniffer.canMove()) {
@@ -435,14 +450,22 @@ public class MonsterBehaviorManager {
    * @param creatureAnimationManager the animation manager handling creature animations
    * @param monster                  the monster to animate
    */
-  private void animateCreature(CreatureAnimationManager creatureAnimationManager, Monster monster) {
-    creatureAnimationManager.animateCreature(
-        creaturesRepresentationMap.get(monster),
-        monster.getPreviousTileX(),
-        monster.getPreviousTileY(),
-        monster.getTileX(),
-        monster.getTileY()
-    );
+  private void animateCreature(CreatureAnimationManager creatureAnimationManager, Monster monster) throws MissingCreatureException {
+    Map.Entry<Creature, Node> creatureNodeEntry = creaturesRepresentationMap.entrySet().stream()
+        .filter(entry -> entry.getKey().equals(monster))
+        .findFirst()
+        .orElseThrow(() -> new MissingCreatureException("Creature " + monster.getName() + " not found in the creaturesRepresentationMap"));
+    try {
+      creatureAnimationManager.animateCreature(
+          creatureNodeEntry,
+          monster.getPreviousTileX(),
+          monster.getPreviousTileY(),
+          monster.getTileX(),
+          monster.getTileY()
+      );
+    } catch (WrongTypeOfCreatureException e) {
+      log.error("Tried to animate a Creature whose type is not yet handled: {}. Error message: {}", monster.getClass(), e.getMessage());
+    }
   }
 
   /**

@@ -9,10 +9,9 @@ import game.adventurer.model.creature.Creature;
 import game.adventurer.model.creature.Monster;
 import game.adventurer.model.enums.Move;
 import game.adventurer.model.enums.MoveResult;
-import game.adventurer.model.enums.WoundCause;
-import game.adventurer.model.wound.WoodsWound;
 import game.adventurer.model.wound.Wound;
 import game.adventurer.service.LocalizedMessageService;
+import game.adventurer.service.WoundManager;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,8 +33,9 @@ public class GameMap {
   private Treasure treasure;
   private List<Monster> monsters = new ArrayList<>();
   private static final Logger LOG = LoggerFactory.getLogger(GameMap.class);
-  private List<Wound> woundsList;
+  private List<Wound> woundsList = new ArrayList<>();
   private Set<Position> occupiedTiles = new HashSet<>();
+  private final WoundManager woundManager;
 
   public GameMap(Tile[][] grid, int mapWidth, int mapHeight, Adventurer adventurer, Treasure treasure) {
     this.grid = grid;
@@ -43,7 +43,7 @@ public class GameMap {
     this.mapHeight = mapHeight;
     this.adventurer = adventurer;
     this.treasure = treasure;
-    this.woundsList = new ArrayList<>();
+    this.woundManager = new WoundManager(woundsList);
   }
 
   public MoveResult moveAdventurer(Move move) {
@@ -69,10 +69,7 @@ public class GameMap {
     if (!isValidMove(newX, newY, adventurer)) {
       // If move ain't valid, verifies if it's because of a Type.WOOD Tile
       if (grid[newY][newX].getType() == Type.WOOD) {
-        WoodsWound wound = new WoodsWound(WoundCause.WOODS);
-        wound.setWoundsMessage(adventurer);
-        adventurer.setHealth(adventurer.getHealth() - wound.getHealthCost());
-        woundsList.add(wound);
+        woundManager.createWound(adventurer);
         return MoveResult.WOUNDED;
       } else {
         LOG.info("Mouvement invalide, l'aventurier reste en ({}, {})",
@@ -80,7 +77,7 @@ public class GameMap {
         return MoveResult.BLOCKED;
       }
 
-    }
+    } // TODO: do something in a else here if trying to move to a Monster's position
 
     // If everything else is ok, try to proceed with the move.
     boolean hasMoved = adventurer.move(move);

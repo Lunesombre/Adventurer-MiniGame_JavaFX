@@ -9,11 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 public class Mugger extends Monster {
 
   public static final int BASE_DAMAGES = 3;
+  public static final int INITIAL_COOLDOWN_TIME = 800;
 
   public Mugger(String name, int tileX, int tileY, int health, MovementHandler movementHandler) {
     super(name, tileX, tileY, health, 1, movementHandler);
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = Set.of(Type.PATH);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
   }
 
   public Mugger(String name, int tileX, int tileY, MovementHandler movementHandler) {
@@ -21,15 +23,17 @@ public class Mugger extends Monster {
     this.moveSpeed = 1;
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = Set.of(Type.PATH);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
+
   }
 
   @Override
   public boolean canMove() {
     long currentTime = System.currentTimeMillis();
     return switch (status) {
-      case NEUTRAL -> lastMoveTime + 500 < currentTime; // 500 ms between moves
-      case ALERTED -> lastMoveTime + 600 < currentTime;
-      case IN_SEARCH -> lastMoveTime + 800 < currentTime;
+      case NEUTRAL -> lastMoveTime + cooldownTime < currentTime; // initially 800 ms between moves
+      case ALERTED -> lastMoveTime + (3L * cooldownTime / 4) < currentTime; // initially 600 ms
+      case IN_SEARCH -> lastMoveTime + cooldownTime < currentTime;
     };
   }
 
@@ -51,6 +55,11 @@ public class Mugger extends Monster {
       return true;
     }
     return false;
+  }
+
+  @Override
+  public int resetCooldownTime() {
+    return INITIAL_COOLDOWN_TIME;
   }
 
 

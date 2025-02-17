@@ -2,11 +2,9 @@ package game.adventurer.model.wound;
 
 import game.adventurer.model.creature.Creature;
 import game.adventurer.model.enums.WoundCause;
-import java.util.Random;
 
 public class WoodsWound extends Wound {
 
-  private static final Random RANDOM = new Random();
 
   private static final String[] DEATH_MESSAGES_KEYS = {
       "lethal.woods.1",
@@ -27,6 +25,7 @@ public class WoodsWound extends Wound {
     this.healthCost = 1;
   }
 
+  @Override
   public void setWoundsMessage(Creature creature) {
     if (isFatal(creature)) {
       int index = RANDOM.nextInt(DEATH_MESSAGES_KEYS.length);

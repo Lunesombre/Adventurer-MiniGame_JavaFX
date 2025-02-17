@@ -20,6 +20,7 @@ public class Lurker extends Monster {
 
   @Getter
   private static final int BASE_DAMAGES = 10;
+  private static final int INITIAL_COOLDOWN_TIME = 800;
   @Getter
   @Setter
   private int rushCounter = 0;
@@ -30,6 +31,7 @@ public class Lurker extends Monster {
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = new HashSet<>();
     this.allowedTileTypes.add(Type.WOOD);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
   }
 
   public Lurker(String name, int tileX, int tileY, MovementHandler movementHandler) {
@@ -37,6 +39,8 @@ public class Lurker extends Monster {
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = new HashSet<>();
     this.allowedTileTypes.add(Type.WOOD);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
+
   }
 
   /**
@@ -49,15 +53,15 @@ public class Lurker extends Monster {
   public boolean canMove() {
     long currentTime = System.currentTimeMillis();
     return switch (status) {
-      case NEUTRAL -> lastMoveTime + 500 < currentTime; // 500 ms between moves
+      case NEUTRAL -> lastMoveTime + cooldownTime < currentTime; // initially 800 ms between moves
       case ALERTED -> {
         if (isRushing) {
-          yield lastMoveTime + 200 < currentTime;
+          yield lastMoveTime + cooldownTime / 4 < currentTime; // 200 ms
         } else {
-          yield lastMoveTime + 600 < currentTime;
+          yield lastMoveTime + 3L * cooldownTime / 4 < currentTime; // 600 ms
         }
       }
-      case IN_SEARCH -> lastMoveTime + 800 < currentTime;
+      case IN_SEARCH -> lastMoveTime + cooldownTime < currentTime;
     };
   }
 
@@ -157,5 +161,10 @@ public class Lurker extends Monster {
   public void chill() {
     super.chill();
     rushCounter = 0;
+  }
+
+  @Override
+  public int resetCooldownTime() {
+    return INITIAL_COOLDOWN_TIME;
   }
 }

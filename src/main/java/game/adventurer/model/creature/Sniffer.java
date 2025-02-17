@@ -16,25 +16,29 @@ import lombok.extern.slf4j.Slf4j;
 public class Sniffer extends Monster {
 
   public static final int BASE_DAMAGES = 1;
+  public static final int INITIAL_COOLDOWN_TIME = 1000;
 
   public Sniffer(String name, int tileX, int tileY, int health, int moveSpeed, MovementHandler movementHandler) {
     super(name, tileX, tileY, health, moveSpeed, movementHandler);
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = Set.of(Type.PATH);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
   }
 
   public Sniffer(String name, int tileX, int tileY, MovementHandler movementHandler) {
     super(name, tileX, tileY, movementHandler);
     this.baseDamages = BASE_DAMAGES;
     this.allowedTileTypes = Set.of(Type.PATH);
+    this.cooldownTime = INITIAL_COOLDOWN_TIME;
+
   }
 
   @Override
   public boolean canMove() {
     long currentTime = System.currentTimeMillis();
     return switch (status) {
-      case NEUTRAL, IN_SEARCH -> lastMoveTime + 1000 < currentTime;
-      case ALERTED -> lastMoveTime + 800 < currentTime;
+      case NEUTRAL, IN_SEARCH -> lastMoveTime + cooldownTime < currentTime;
+      case ALERTED -> lastMoveTime + (4L * cooldownTime / 5) < currentTime; // initially 800 ms
     };
   }
 
@@ -90,5 +94,10 @@ public class Sniffer extends Monster {
       }
     }
 
+  }
+
+  @Override
+  public int resetCooldownTime() {
+    return INITIAL_COOLDOWN_TIME;
   }
 }

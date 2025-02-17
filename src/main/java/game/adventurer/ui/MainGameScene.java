@@ -2,6 +2,7 @@ package game.adventurer.ui;
 
 import static game.adventurer.AdventurerGameApp.highScoreManager;
 import static game.adventurer.util.MiscUtil.calculateFieldOfView;
+import static game.adventurer.util.MiscUtil.handleInvalidGameState;
 import static javafx.scene.paint.Color.rgb;
 
 import game.adventurer.common.Localizable;
@@ -99,6 +100,7 @@ public class MainGameScene extends BaseScene implements Localizable {
   private Pane mapView;
   private VBox leftPanel;
   private VBox rightPanel;
+  @Getter
   private final RightPanelController rightPanelController = new RightPanelController(PADDING, MESSAGE_BOX_MIN_WIDTH);
   @Getter
   private DifficultyLevel difficultyLevel;
@@ -119,6 +121,7 @@ public class MainGameScene extends BaseScene implements Localizable {
   private int movesCount;
   @Setter
   private Runnable onGameEnd;
+  @Getter
   @Setter
   private Runnable onGameOver;
 
@@ -285,7 +288,7 @@ public class MainGameScene extends BaseScene implements Localizable {
     // Register this class as Localizable - done after the localizable texts are set to avoid Null Pointer Exception.
     localizationService.registerLocalizable(this);
 
-    creatureAnimationManager = new CreatureAnimationManager(this);
+    creatureAnimationManager = new CreatureAnimationManager(this, this.gameMap);
     monsterBehaviorManager = new MonsterBehaviorManager(gameMap, creaturesRepresentationMap, activeTimelines);
     startGameLoop();
     startMonsterMovement();
@@ -397,7 +400,7 @@ public class MainGameScene extends BaseScene implements Localizable {
   private void handleMoveResult(MoveResult moveResult) {
     switch (moveResult) {
       case MOVED -> handleSuccessfulMove();
-      case WOUNDED -> handleWoundedMove();
+      case WOUNDED -> handleWound();
       case OUT_OF_BOUNDS -> handleOutOfBoundsMove();
       case BLOCKED -> log.debug("BLOCKED");
     }
@@ -406,12 +409,16 @@ public class MainGameScene extends BaseScene implements Localizable {
   private void handleSuccessfulMove() {
     movesCount++;
     // start animation
-    creatureAnimationManager.animateCreature(adventurerCircle,
-        gameMap.getAdventurer().getPreviousTileX(),
-        gameMap.getAdventurer().getPreviousTileY(),
-        gameMap.getAdventurer().getTileX(),
-        gameMap.getAdventurer().getTileY()
-    );
+    try {
+      creatureAnimationManager.animateCreature(Map.entry(gameMap.getAdventurer(), adventurerCircle),
+          gameMap.getAdventurer().getPreviousTileX(),
+          gameMap.getAdventurer().getPreviousTileY(),
+          gameMap.getAdventurer().getTileX(),
+          gameMap.getAdventurer().getTileY()
+      );
+    } catch (WrongTypeOfCreatureException e) {
+      handleInvalidGameState(this.getClass(), e);
+    }
     if (isTreasureCollected()) {
       if (onGameEnd != null) {
         onGameEnd.run();
@@ -425,16 +432,9 @@ public class MainGameScene extends BaseScene implements Localizable {
     }
   }
 
-  private void handleWoundedMove() {
+  public void handleWound() {
+    gameMap.getWoundManager().handleWound(rightPanelController, onGameOver, gameMap.getAdventurer());
     showDamageEffect();
-    rightPanelController.addMessage(gameMap.getWoundsList().getLast().getWoundMessageKey());
-    if (isAdventurerDead(gameMap.getAdventurer())) {
-      if (onGameOver != null) {
-        onGameOver.run();
-      } else {
-        log.error("onGameOver is null");
-      }
-    }
   }
 
   private void handleOutOfBoundsMove() {
@@ -687,7 +687,7 @@ public class MainGameScene extends BaseScene implements Localizable {
         gameMap.getAdventurer().getTileY() == gameMap.getTreasure().getTileY();
   }
 
-  private void showDamageEffect() {
+  public void showDamageEffect() {
     effectOverlay.setFill(rgb(255, 0, 0, 0.5));
     effectOverlay.setVisible(true);
 
@@ -709,10 +709,6 @@ public class MainGameScene extends BaseScene implements Localizable {
 
     fade.setOnFinished(event -> effectOverlay.setVisible(false));
     fade.play();
-  }
-
-  private boolean isAdventurerDead(Adventurer adventurer) {
-    return adventurer.getHealth() <= 0;
   }
 
   private void createLeftPanel() {
