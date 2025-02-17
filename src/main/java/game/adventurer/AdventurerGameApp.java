@@ -104,7 +104,7 @@ public class AdventurerGameApp extends Application {
 
   private void startGame(String playerName, MapSize mapSize, DifficultyLevel difficultyLevel) {
     try {
-      GameMap gameMap = MapGenerator.generateMap(mapSize.getSize(), mapSize.getSize(), playerName);
+      GameMap gameMap = MapGenerator.generateMap(playerName, mapSize, difficultyLevel);
       MainGameScene mainGameScene = MainGameScene.create(gameMap, sharedSize, difficultyLevel, localizationService, hostServices);
       mainGameScene.setOnGameEnd(() -> {
         mainGameScene.stopActiveTimelines();
