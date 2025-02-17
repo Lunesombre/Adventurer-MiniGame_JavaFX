@@ -109,7 +109,6 @@ public class MainGameScene extends BaseScene implements Localizable {
 
   private Circle adventurerCircle;
   private Group treasureCross;
-  private TriangleCreatureRepresentation testMonsterRepresentation;
   @Getter
   private double tileSize;
   @Getter
@@ -458,9 +457,12 @@ public class MainGameScene extends BaseScene implements Localizable {
     // Set Adventurer field of View visually
     updateAdventurerFieldOfView();
 
-    // displays/hide testMonsterRepresentation
-    Position monsterPos = new Position(gameMap.getMonsters().getFirst().getTileX(), gameMap.getMonsters().getFirst().getTileY());
-    testMonsterRepresentation.setVisible(visibleTiles.contains(monsterPos));
+    // displays/hide the Monster representation based on the Adventurer FoV
+    for (Monster monster : gameMap.getMonsters()) {
+      Position monsterPos = new Position(monster.getTileX(), monster.getTileY());
+      creaturesRepresentationMap.get(monster).setVisible(visibleTiles.contains(monsterPos));
+    }
+
   }
 
   /**
@@ -630,27 +632,26 @@ public class MainGameScene extends BaseScene implements Localizable {
       }
     }
 
-    // Adding testMonsterRepresentation
-    testMonsterRepresentation = new TriangleCreatureRepresentation(tileSize * 0.9, gameMap.getMonsters().getFirst().getFacingDirection());
-    double maDvX = xOffset + (gameMap.getMonsters().getFirst().getTileX() + 0.5) * tileSize;
-    double maDvY = yOffset + (gameMap.getMonsters().getFirst().getTileY() + 0.5) * tileSize;
+    // Adding Monsters representations
+    for (Monster monster : gameMap.getMonsters()) {
+      TriangleCreatureRepresentation monsterRender = new TriangleCreatureRepresentation(tileSize * 0.9, monster.getFacingDirection());
+      double maDvX = xOffset + (monster.getTileX() + 0.5) * tileSize;
+      double maDvY = yOffset + (monster.getTileY() + 0.5) * tileSize;
 
-    // Move the triangle to (maDvX, maDvY)
-    testMonsterRepresentation.setLayoutX(maDvX);
-    testMonsterRepresentation.setLayoutY(maDvY);
+      // Move the triangle to (maDvX, maDvY)
+      monsterRender.setLayoutX(maDvX);
+      monsterRender.setLayoutY(maDvY);
 
-    mapView.getChildren().add(testMonsterRepresentation);
-    Monster monster = gameMap.getMonsters().getFirst();
-    if (monster instanceof Mugger) {
-      testMonsterRepresentation.setFill(Color.RED);
-    } else if (monster instanceof Sniffer) {
-      testMonsterRepresentation.setFill(Color.YELLOW);
-    } else if (monster instanceof Lurker) {
-      testMonsterRepresentation.setFill(Color.ORCHID);
+      mapView.getChildren().add(monsterRender);
+      switch (monster) {
+        case Mugger ignored -> monsterRender.setFill(Color.RED);
+        case Sniffer ignored -> monsterRender.setFill(Color.YELLOW);
+        case Lurker ignored -> monsterRender.setFill(Color.ORCHID);
+        default -> log.warn("Unknown Monster added to game map, no render possible");
 
+      }
+      creaturesRepresentationMap.put(monster, monsterRender);
     }
-    creaturesRepresentationMap.put(gameMap.getMonsters().getFirst(), testMonsterRepresentation);
-    testMonsterRepresentation.setVisible(false);
 
     // Listener for facingDirection of Monsters
     for (Entry<Creature, Node> entry : creaturesRepresentationMap.entrySet()) {

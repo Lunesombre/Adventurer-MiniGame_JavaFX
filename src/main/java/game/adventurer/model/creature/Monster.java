@@ -72,7 +72,7 @@ public abstract class Monster extends Creature {
     Position nextValidNeighbor = getValidNeighbor(this, gameMap, true);
     if (nextValidNeighbor != null) {
       searchArea.remove(nextValidNeighbor);
-      log.info("goes to nextValidNeigbor in {}, searchArea size : {}", nextValidNeighbor, searchArea.size());
+      log.info("{} goes to nextValidNeighbor in {}, searchArea size : {}", this.name, nextValidNeighbor, searchArea.size());
       moveTo(nextValidNeighbor);
     } else {
       if (searchTarget == null) {
@@ -89,7 +89,7 @@ public abstract class Monster extends Creature {
         }
         if (!nextPosition.equals(currentPosition)) {
           searchArea.remove(nextPosition);
-          log.info("searchArea size : {}", searchArea.size());
+          log.info("searchArea size : {} for {}", searchArea.size(), this.name);
           this.setSearchTarget(nextPosition);
         }
       } else {
@@ -103,7 +103,7 @@ public abstract class Monster extends Creature {
           searchArea.remove(path.getFirst());
 
           if (new Position(this.tileX, this.tileY).equals(searchTarget)) {
-            log.info("searchTarget {} reached, searchArea size: {}", searchTarget, searchArea.size());
+            log.info("{} : searchTarget {} reached, searchArea size: {}", this.name, searchTarget, searchArea.size());
             setSearchTarget(null);
           }
         }
@@ -236,5 +236,29 @@ public abstract class Monster extends Creature {
     this.setFacingDirection(facingDirection);
     lastMoveTime = System.currentTimeMillis();
 
+  }
+
+  @Override
+  public String toString() {
+    return "Monster{" +
+        "name='" + name + '\'' +
+        ", status=" + status +
+        ", baseDamages=" + baseDamages +
+        ", random=" + random +
+        ", lastSeenAdventurerPosition=" + lastSeenAdventurerPosition +
+        ", searchArea=" + searchArea +
+        ", searchTarget=" + searchTarget +
+        ", storedFOV=" + storedFOV +
+        ", tileX=" + tileX +
+        ", tileY=" + tileY +
+        ", health=" + health +
+        ", moveSpeed=" + moveSpeed +
+        ", lastMoveTime=" + lastMoveTime +
+        ", previousTileX=" + previousTileX +
+        ", previousTileY=" + previousTileY +
+        ", allowedTileTypes=" + allowedTileTypes +
+        ", facingDirection=" + facingDirection +
+        ", visibleTiles=" + visibleTiles +
+        '}';
   }
 }
