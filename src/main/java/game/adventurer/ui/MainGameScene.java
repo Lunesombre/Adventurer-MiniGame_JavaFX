@@ -50,6 +50,7 @@ import java.util.Set;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.HostServices;
 import javafx.geometry.Insets;
@@ -421,7 +422,10 @@ public class MainGameScene extends BaseScene implements Localizable {
     }
     if (isTreasureCollected()) {
       if (onGameEnd != null) {
-        onGameEnd.run();
+        // Short pause before EndGame Screen so that the player understands what happens
+        PauseTransition pause = new PauseTransition(Duration.millis(300));
+        pause.setOnFinished(event -> onGameEnd.run());
+        pause.play();
       } else {
         log.error("onGameEnd is null");
       }
