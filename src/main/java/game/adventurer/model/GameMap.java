@@ -3,6 +3,7 @@ package game.adventurer.model;
 import static game.adventurer.util.MiscUtil.handleInvalidGameState;
 
 import game.adventurer.exceptions.InvalidGameStateException;
+import game.adventurer.exceptions.WrongTypeOfCreatureException;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
@@ -16,14 +17,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Setter
+@Slf4j
 public class GameMap {
 
   private Tile[][] grid;
@@ -32,7 +34,6 @@ public class GameMap {
   private Adventurer adventurer;
   private Treasure treasure;
   private List<Monster> monsters = new ArrayList<>();
-  private static final Logger LOG = LoggerFactory.getLogger(GameMap.class);
   private List<Wound> woundsList = new ArrayList<>();
   private Set<Position> occupiedTiles = new HashSet<>();
   private final WoundManager woundManager;
@@ -49,7 +50,7 @@ public class GameMap {
   public MoveResult moveAdventurer(Move move) {
     try {
       if (isOutOfMapBounds(adventurer.getTileX(), adventurer.getTileY())) {
-        LOG.error("Adventurer's current coordinates ({}, {}) are invalid!",
+        log.error("Adventurer's current coordinates ({}, {}) are invalid!",
             adventurer.getTileX(), adventurer.getTileY());
         throw new InvalidGameStateException(LocalizedMessageService.getInstance().getMessage("error.impossibleAdventurerLocation"));
       }
@@ -61,7 +62,7 @@ public class GameMap {
 
     // First, check if the move is within the map bounds
     if (isOutOfMapBounds(newX, newY)) {
-      LOG.warn("Vous ne pouvez pas quitter la carte sans le trésor !");
+      log.warn("Vous ne pouvez pas quitter la carte sans le trésor !");
       return MoveResult.OUT_OF_BOUNDS;
     }
 
@@ -72,12 +73,24 @@ public class GameMap {
         woundManager.createWound(adventurer);
         return MoveResult.WOUNDED;
       } else {
-        LOG.info("Mouvement invalide, l'aventurier reste en ({}, {})",
+        log.info("Mouvement invalide, l'aventurier reste en ({}, {})",
             adventurer.getTileX(), adventurer.getTileY());
         return MoveResult.BLOCKED;
       }
 
-    } // TODO: do something in a else here if trying to move to a Monster's position
+    }
+    // Checking the monsters' list to see if new position is currently occupied by a monster
+    Optional<Monster> monster = monsters.stream()
+        .filter(ms -> ms.getCurrentPosition().equals(new Position(newX, newY)))
+        .findFirst();
+    if (monster.isPresent()) {
+      try {
+        woundManager.createWound(monster.get(), adventurer, false);
+        return MoveResult.WOUNDED;
+      } catch (WrongTypeOfCreatureException e) {
+        handleInvalidGameState(this.getClass(), e);
+      }
+    }
 
     // If everything else is ok, try to proceed with the move.
     boolean hasMoved = adventurer.move(move);
@@ -146,8 +159,12 @@ public class GameMap {
   }
 
   public void freeTile(Position position) {
-    occupiedTiles.remove(position);
+    boolean hasFreed = occupiedTiles.remove(position);
+    if (!hasFreed) {
+      log.warn("Cannot free : {} as not found in {} ", position, occupiedTiles);
+    } else {
+      log.trace("YAY ! Tile freed {}", position);
+    }
   }
-  // TODO : ajouter usage de ces méthodes à chaque mouvement de Creature
 
 }

@@ -1,5 +1,6 @@
 package game.adventurer.model.creature;
 
+import game.adventurer.model.Position;
 import game.adventurer.model.Tile.Type;
 import game.adventurer.model.enums.Move;
 import java.util.Set;
@@ -41,10 +42,14 @@ public class Adventurer extends Creature {
   public boolean move(Move move) {
     long currentTime = System.currentTimeMillis();
     if (lastMoveTime + cooldownTime < currentTime) {
+      int newX = currentPosition.x() + move.getDx();
+      int newY = currentPosition.y() + move.getDy();
       this.previousTileX = this.tileX;
       this.previousTileY = this.tileY;
       this.tileX += move.getDx();
       this.tileY += move.getDy();
+      this.previousPosition = currentPosition;
+      this.currentPosition = new Position(newX, newY);
       lastMoveTime = currentTime;
       return true;
     }

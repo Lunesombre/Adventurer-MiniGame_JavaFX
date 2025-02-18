@@ -50,6 +50,7 @@ public class Mugger extends Monster {
       }
       previousTileX = tileX;
       previousTileY = tileY;
+      previousPosition = currentPosition;
       randomMove();
       log.trace("{} position : y={}, x={}, direction:{}", getName(), getTileY(), getTileX(), getFacingDirection());
       return true;
