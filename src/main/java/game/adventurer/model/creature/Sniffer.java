@@ -47,6 +47,7 @@ public class Sniffer extends Monster {
     if (status.equals(MonsterStatus.NEUTRAL) && canMove()) {
       previousTileX = tileX;
       previousTileY = tileY;
+      previousPosition = currentPosition;
       randomMove();
       log.trace("{} position : y={}, x={}, direction:{}", getName(), getTileY(), getTileX(), getFacingDirection());
       return true;
@@ -80,6 +81,7 @@ public class Sniffer extends Monster {
       if (searchTarget != null) {
         previousTileX = tileX;
         previousTileY = tileY;
+        previousPosition = currentPosition;
         // uses PathfindingUtil to find the next tile to go get the Adventurer
         LinkedHashSet<Position> pathToAdventurer =
             (LinkedHashSet<Position>) PathfindingUtil.shortestPath(this, new Position(this.getTileX(), this.getTileY()), searchTarget,

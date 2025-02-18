@@ -105,6 +105,7 @@ public class MonsterPlacerService {
               MovementHandler.class);
           Monster monster = constructor.newInstance(monsterClass.getSimpleName() + " " + (i + 1), position.x(), position.y(), movementHandler);
           map.addMonster(monster);
+          map.occupyTile(position);
 
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
           throw new RuntimeException(e);

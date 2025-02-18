@@ -19,18 +19,38 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class Creature {
 
   protected String name;
+  /**
+   * @deprecated
+   */
+  @Deprecated(since = "1.0", forRemoval = true)
   @Setter
   protected int tileX; // Position tileX on the game map
+  /**
+   * @deprecated
+   */
+  @Deprecated(since = "1.0", forRemoval = true)
   @Setter
   protected int tileY; // Position tileY on the game map
+  @Setter
+  protected Position currentPosition; // Current position on the game map
   protected IntegerProperty health; // Number of life points of a Creature, observable
   protected int moveSpeed; // unused for now, but soon
   @Setter
   protected long lastMoveTime = 0;
+  /**
+   * @deprecated
+   */
+  @Deprecated(since = "1.0", forRemoval = true)
   @Setter
   protected int previousTileX;
+  /**
+   * @deprecated
+   */
+  @Deprecated(since = "1.0", forRemoval = true)
   @Setter
   protected int previousTileY;
+  @Setter
+  protected Position previousPosition; // Current position on the game map
   protected Set<Type> allowedTileTypes;
   protected ObjectProperty<Direction> facingDirection = new SimpleObjectProperty<>();
   protected MovementHandler movementHandler;
@@ -50,6 +70,7 @@ public abstract class Creature {
     this.name = name;
     this.tileX = tileX;
     this.tileY = tileY;
+    this.currentPosition = new Position(tileX, tileY);
     this.health = new SimpleIntegerProperty(health);
     this.moveSpeed = moveSpeed;
     this.facingDirection.set(Direction.values()[new Random().nextInt(Direction.values().length)]); // creates a random facing Direction

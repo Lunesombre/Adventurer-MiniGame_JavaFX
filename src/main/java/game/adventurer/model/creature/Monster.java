@@ -68,7 +68,7 @@ public abstract class Monster extends Creature {
       chill();
       return;
     }
-    Position currentPosition = new Position(this.tileX, this.tileY);
+
     Position nextValidNeighbor = getValidNeighbor(this, gameMap, true);
     if (nextValidNeighbor != null) {
       searchArea.remove(nextValidNeighbor);
@@ -102,7 +102,7 @@ public abstract class Monster extends Creature {
           moveTo(path.getFirst());
           searchArea.remove(path.getFirst());
 
-          if (new Position(this.tileX, this.tileY).equals(searchTarget)) {
+          if (currentPosition.equals(searchTarget)) {
             log.info("{} : searchTarget {} reached, searchArea size: {}", this.name, searchTarget, searchArea.size());
             setSearchTarget(null);
           }
@@ -116,9 +116,10 @@ public abstract class Monster extends Creature {
       if (lastSeenAdventurerPosition != null) {
         previousTileX = tileX;
         previousTileY = tileY;
+        previousPosition = currentPosition;
         // uses PathfindingUtil to find the next tile to go get the Adventurer
         LinkedHashSet<Position> pathToAdventurer =
-            (LinkedHashSet<Position>) shortestPath(this, new Position(this.getTileX(), this.getTileY()), lastSeenAdventurerPosition,
+            (LinkedHashSet<Position>) shortestPath(this, currentPosition, lastSeenAdventurerPosition,
                 gameMap);
         // move to this tile
         if (!pathToAdventurer.isEmpty()) {
@@ -182,6 +183,7 @@ public abstract class Monster extends Creature {
     // If a valid direction has been found, the Monster moves
     this.tileX += move.getDx();
     this.tileY += move.getDy();
+    this.currentPosition = new Position(nextX, nextY);
   }
 
 
@@ -213,8 +215,8 @@ public abstract class Monster extends Creature {
   }
 
   public void moveTo(Position pos) {
-    int dx = pos.x() - this.getTileX();
-    int dy = pos.y() - this.getTileY();
+    int dx = pos.x() - this.currentPosition.x();
+    int dy = pos.y() - this.currentPosition.y();
     Direction facingDirection;
     switch (dx) {
       case 0 -> {
@@ -228,14 +230,18 @@ public abstract class Monster extends Creature {
       case -1 -> facingDirection = Direction.WEST;
       default -> throw new RuntimeException("Impossible movement, deltaV required: x =" + dx + ", y=" + dy + ".");
     }
+    moveTo(pos, facingDirection);
+  }
 
+  public void moveTo(Position pos, Direction facingDirection) {
     this.previousTileX = tileX;
     this.previousTileY = tileY;
     this.tileX = pos.x();
     this.tileY = pos.y();
+    this.previousPosition = currentPosition;
+    this.currentPosition = pos;
     this.setFacingDirection(facingDirection);
     lastMoveTime = System.currentTimeMillis();
-
   }
 
   @Override

@@ -27,11 +27,15 @@ public class WoundManager {
   }
 
   public Wound createWound(Creature perpetrator, Creature victim) throws WrongTypeOfCreatureException {
-    return createMonsterWound(perpetrator, victim);
+    return createWound(perpetrator, victim, true);
   }
 
   public Wound createWound(Creature victim) {
     return createWoodWound(victim);
+  }
+
+  public Wound createWound(Creature perpetrator, Creature victim, boolean causedByMonster) throws WrongTypeOfCreatureException {
+    return createMonsterWound(perpetrator, victim, causedByMonster);
   }
 
   private WoodsWound createWoodWound(Creature victim) {
@@ -42,10 +46,10 @@ public class WoundManager {
     return wound;
   }
 
-  private Wound createMonsterWound(Creature perpetrator, Creature victim) throws WrongTypeOfCreatureException {
+  private Wound createMonsterWound(Creature perpetrator, Creature victim, boolean causedByMonster) throws WrongTypeOfCreatureException {
     WoundCause cause = getMonsterWoundCause(perpetrator);
 
-    MonsterWound wound = new MonsterWound(cause, (Monster) perpetrator);
+    MonsterWound wound = new MonsterWound(cause, (Monster) perpetrator, causedByMonster);
     wound.setWoundsMessage(victim);
     victim.setHealth(victim.getHealth() - wound.getHealthCost());
     if (victim instanceof Adventurer) {

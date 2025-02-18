@@ -6,12 +6,8 @@ import game.adventurer.model.GameMap;
 import game.adventurer.model.Position;
 import game.adventurer.model.creature.Adventurer;
 import game.adventurer.model.creature.Creature;
-import game.adventurer.model.creature.Lurker;
 import game.adventurer.model.creature.Monster;
-import game.adventurer.model.creature.Mugger;
 import game.adventurer.model.creature.Sniffer;
-import game.adventurer.model.enums.WoundCause;
-import game.adventurer.model.wound.MonsterWound;
 import game.adventurer.service.WoundManager;
 import game.adventurer.ui.MainGameScene;
 import game.adventurer.ui.common.TriangleCreatureRepresentation;
@@ -76,8 +72,8 @@ public class CreatureAnimationManager {
 
             if (creature instanceof Monster) {
               Adventurer adventurer = gameMap.getAdventurer();
-              Position creaturePosition = new Position(creature.getTileX(), creature.getTileY());
-              Position adventurerPosition = new Position(adventurer.getTileX(), adventurer.getTileY());
+              Position creaturePosition = creature.getCurrentPosition();
+              Position adventurerPosition = adventurer.getCurrentPosition();
               if (creaturePosition.equals(adventurerPosition)) {
                 woundManager.createWound(creature, adventurer);
                 woundManager.handleWound(mainGameScene.getRightPanelController(), mainGameScene.getOnGameOver(), adventurer);
@@ -92,6 +88,7 @@ public class CreatureAnimationManager {
                       triangle.setLayoutY(startY);
                       creature.setTileX(creature.getPreviousTileX());
                       creature.setTileY(creature.getPreviousTileY());
+                      creature.setCurrentPosition(creature.getPreviousPosition());
                     }
                 );
                 timeline.getKeyFrames().add(resetPositionFrame);
@@ -123,6 +120,8 @@ public class CreatureAnimationManager {
             }
           } else {
             creature.setCooldownTime(creature.resetCooldownTime());
+            gameMap.freeTile(creature.getPreviousPosition()); // Try to free the previously occupied tile.
+            gameMap.occupyTile(creature.getCurrentPosition()); // Occupies the new tile.
           }
         });
         timeline.play();
@@ -130,17 +129,6 @@ public class CreatureAnimationManager {
       default -> log.error("Unhandled Creature representation");
 
     }
-  }
-
-  private static MonsterWound getMonsterWound(Creature creature) {
-    WoundCause woundCause = switch (creature) {
-      case Lurker ignored -> WoundCause.LURKER;
-      case Sniffer ignored -> WoundCause.SNIFFER;
-      case Mugger ignored -> WoundCause.MUGGER;
-      default -> WoundCause.MONSTER;
-    };
-
-    return new MonsterWound(woundCause, (Monster) creature);
   }
 
 
