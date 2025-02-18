@@ -13,6 +13,8 @@ import game.adventurer.model.wound.MonsterWound;
 import game.adventurer.model.wound.WoodsWound;
 import game.adventurer.model.wound.Wound;
 import java.util.List;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,7 +76,11 @@ public class WoundManager {
     if (isCreatureDead(victim)) {
       if (victim instanceof Adventurer) {
         if (onGameOver != null) {
-          onGameOver.run();
+          victim.setCooldownTime(10000); // prevents the player to move its Adventurer after its death. 😅
+          // Short pause before GameOverScene so that the player understands what happens
+          PauseTransition pause = new PauseTransition(Duration.millis(300));
+          pause.setOnFinished(event -> onGameOver.run());
+          pause.play();
         } else {
           log.error("onGameOver is null");
         }
